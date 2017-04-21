@@ -36,4 +36,3 @@ include default stuff
 #include <processor.h>
 #include <main.h>
 #include <ecodes.h>
-#inclide <polling_server.h>
