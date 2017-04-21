@@ -1,4 +1,4 @@
-APP = app/polling_server
+APP = app/test_polling_server
 ARCH = mips/hf-risc
 
 SERIAL_BAUD=57600
