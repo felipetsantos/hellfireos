@@ -49,6 +49,7 @@ void panic(int32_t cause)
 	case PANIC_CANT_PLACE_RUN:	kprintf("can't place task on run queue"); break;
 	case PANIC_CANT_PLACE_DELAY:	kprintf("can't place task on delay queue"); break;
 	case PANIC_CANT_PLACE_RT:	kprintf("can't place task on real time queue"); break;
+	case PANIC_CANT_PLACE_AP:       kprintf("can't place task on aperiodic queue"); break;
 	case PANIC_CANT_SWAP:		kprintf("can't swap tasks on queue"); break;
 	case PANIC_NUTS_SEM:		kprintf("insane semaphore"); break;
 	default:			kprintf("unknown error"); break;
