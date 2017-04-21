@@ -15,4 +15,5 @@
 #define PANIC_NUTS_SEM			0x0d
 #define PANIC_UNKNOWN			0xff
 #define PANIC_CANT_PLACE_AP             0x11
+#define PANIC_NO_TASKS_AP		0x12
 void panic(int32_t cause);

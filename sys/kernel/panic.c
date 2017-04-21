@@ -45,6 +45,7 @@ void panic(int32_t cause)
 	case PANIC_NO_TASKS_RUN:	kprintf("no tasks on run queue"); break;
 	case PANIC_NO_TASKS_DELAY:	kprintf("no tasks on delay queue"); break;
 	case PANIC_NO_TASKS_RT:		kprintf("no tasks on realtime queue"); break;
+	case PANIC_NO_TASKS_AP:         kprintf("no tasks on aperiodic queue"); break;
 	case PANIC_UNKNOWN_TASK_STATE:	kprintf("task in unknown state"); break;
 	case PANIC_CANT_PLACE_RUN:	kprintf("can't place task on run queue"); break;
 	case PANIC_CANT_PLACE_DELAY:	kprintf("can't place task on delay queue"); break;
