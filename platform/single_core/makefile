@@ -1,4 +1,4 @@
-APP = app/sched_test2
+APP = app/polling_server
 ARCH = mips/hf-risc
 
 SERIAL_BAUD=57600
