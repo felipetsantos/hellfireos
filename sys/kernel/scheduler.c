@@ -61,6 +61,15 @@ static void rt_queue_next()
 		panic(PANIC_CANT_PLACE_RT);
 }
 
+static void ap_queue_next(){
+        krnl_task = hf_queue_remhead(krnl_ap_queue);
+        if (!krnl_task)
+                panic(PANIC_NO_TASKS_AP);
+        if (hf_queue_addtail(krnl_ap_queue, krnl_task))
+                panic(PANIC_CANT_PLACE_AP);
+
+}
+
 
 /**
  * @brief Task dispatcher.
@@ -277,3 +286,15 @@ int32_t sched_rma(void)
 		return 0;
 	}
 }
+
+int32_t sched_ap(void){
+        if (hf_queue_count(krnl_ap_queue) == 0)
+                panic(PANIC_NO_TASKS_AP);
+        do {
+                ap_queue_next();
+        } while (krnl_task->state == TASK_BLOCKED);
+        krnl_task->apjobs++;
+
+        return krnl_task->id;
+}
+

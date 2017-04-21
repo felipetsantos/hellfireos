@@ -55,6 +55,7 @@ static void clear_tcb(void)
 		krnl_task->delay = 0;
 		krnl_task->rtjobs = 0;
 		krnl_task->bgjobs = 0;
+		krnl_task->apjobs = 0;
 		krnl_task->deadline_misses = 0;
 		krnl_task->period = 0;
 		krnl_task->capacity = 0;
@@ -76,6 +77,7 @@ static void clear_pcb(void)
 {
 	krnl_pcb.sched_rt = sched_rma;
 	krnl_pcb.sched_be = sched_priorityrr;
+	krnl_pcb.sched_ap = sched_ap;
 	krnl_pcb.coop_cswitch = 0;
 	krnl_pcb.preempt_cswitch = 0;
 	krnl_pcb.interrupts = 0;

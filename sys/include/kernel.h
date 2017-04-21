@@ -36,6 +36,7 @@ struct tcb_entry {
 	uint32_t delay;					/*!< delay to enter in the run/RT queue */
 	uint32_t rtjobs;				/*!< total RT task jobs executed */
 	uint32_t bgjobs;				/*!< total BE task jobs executed */
+	uint32_t apjobs;                                /*!< total AP task jobs executed */	
 	uint32_t deadline_misses;			/*!< task realtime deadline misses */
 	uint16_t period;				/*!< task period */
 	uint16_t capacity;				/*!< task capacity */
@@ -52,6 +53,7 @@ struct tcb_entry {
 struct pcb_entry {
 	int32_t (*sched_rt)();				/*!< pointer to the realtime scheduler */
 	int32_t (*sched_be)();				/*!< pointer to the best effort scheduler */
+	int32_t (*sched_ap)();                          /*!< pointer to the aperiodic scheduler */
 	uint32_t coop_cswitch;				/*!< cooperative context switches */
 	uint32_t preempt_cswitch;			/*!< preeptive context switches */
 	uint32_t interrupts;				/*!< number of non-masked interrupts */
