@@ -10,6 +10,10 @@ void task(void){
 	}
 }
 
+void task2(void){
+                printf("executando tarefa aperiodica\n");
+}
+
 void tasks_periodics(void){
 	hf_spawn(task, 4, 1, 4, "task 1", 2048);
 	hf_spawn(task, 8, 2, 8, "task 2", 2048);
@@ -20,12 +24,11 @@ void generate_ap_tasks(void){
 	for(;;){
 		int32_t r = (random()%140)+60;
 		delay_ms(r);
-		hf_spawn(task, 0, 2, 0, "aperidic", 2048);
-	}
+		hf_spawn(task2, 0, 1, 0, "aperidic", 2048);
+	}	
 }
 void app_main(void){
+	hf_spawn(generate_ap_tasks, 0, 0, 0, "generate", 2048);
 	tasks_periodics();
-	generate_ap_tasks();
-
 }
 

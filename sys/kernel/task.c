@@ -270,6 +270,7 @@ int32_t hf_spawn(void (*task)(), uint16_t period, uint16_t capacity, uint16_t de
 		if (period){
 			if (hf_queue_addtail(krnl_rt_queue, krnl_task)) panic(PANIC_CANT_PLACE_RT);
 		}else if(period == 0 && deadline == 0 && capacity != 0){
+			printf("adicionando tarefa aperiodica");
 			if (hf_queue_addtail(krnl_ap_queue, krnl_task)) panic(PANIC_CANT_PLACE_AP);
 		}else{
 			if (hf_queue_addtail(krnl_run_queue, krnl_task)) panic(PANIC_CANT_PLACE_RUN);

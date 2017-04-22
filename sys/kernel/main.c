@@ -108,10 +108,11 @@ static void idletask(void)
 	}
 }
 
-static void polling_server(void){
+void polling_server(void){
+printf("---começou polling server--\n");
+for(;;){
 	int32_t rc;
 	volatile int32_t status;
-
 	status = _di();
 #if KERNEL_LOG >= 1
 		dprintf("polling_server() %d ", (uint32_t)_read_us());
@@ -138,6 +139,7 @@ static void polling_server(void){
 	}else{
 		panic(PANIC_NO_TASKS_LEFT);
 	}
+}
 }
 /**
  * @internal
@@ -174,7 +176,7 @@ int main(void)
 		hf_spawn(idletask, 0, 0, 0, "idle task", 1024);
 		_device_init();
 		_task_init();
-		hf_spawn(polling_server, 3, 1, 3, "polling server", 1024);
+		hf_spawn(polling_server, 5, 1, 5, "polling server", 1024);
 		app_main();
 		_restoreexec(krnl_task->task_context, 1, krnl_current_task);
 		panic(PANIC_ABORTED);

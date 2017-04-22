@@ -63,8 +63,8 @@ static void rt_queue_next()
 
 static void ap_queue_next(){
         krnl_task = hf_queue_remhead(krnl_ap_queue);
-        if (!krnl_task)
-                panic(PANIC_NO_TASKS_AP);
+        //if (!krnl_task)
+        //        panic(PANIC_NO_TASKS_AP);
 
 }
 
@@ -287,7 +287,7 @@ int32_t sched_rma(void)
 
 int32_t sched_ap(void){
         if (hf_queue_count(krnl_ap_queue) == 0)
-                panic(PANIC_NO_TASKS_AP);
+              return 0;
         do {
                 ap_queue_next();
         } while (krnl_task->state == TASK_BLOCKED);
