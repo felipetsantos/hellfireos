@@ -69,6 +69,7 @@ struct pcb_entry krnl_pcb;
 
 struct tcb_entry *krnl_task;				/*!< pointer to a task control block entry */
 uint16_t krnl_tasks;					/*!< number of tasks in the system */
+uint16_t krnl_ap_tasks;					/*!< number of aperiodic tasks in the system */
 uint16_t krnl_current_task;				/*!< the current running task id */
 uint16_t krnl_schedule;					/*!< scheduler enable / disable flag */
 struct queue *krnl_run_queue;				/*!< pointer to a queue of best effort tasks */

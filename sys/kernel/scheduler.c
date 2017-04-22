@@ -286,13 +286,13 @@ int32_t sched_rma(void)
 }
 
 int32_t sched_ap(void){
-        if (hf_queue_count(krnl_ap_queue) == 0)
-              return 0;
-        do {
-                ap_queue_next();
-        } while (krnl_task->state == TASK_BLOCKED);
-        krnl_task->apjobs++;
+	if (hf_queue_count(krnl_ap_queue) == 0)
+		return 0;
+	do {
+		ap_queue_next();
+	} while (krnl_task->state == TASK_BLOCKED);
+	krnl_task->apjobs++;
 
-        return krnl_task->id;
+	return krnl_task->id;
 }
 

@@ -240,6 +240,7 @@ int32_t hf_spawn(void (*task)(), uint16_t period, uint16_t capacity, uint16_t de
 		_ei(status);
 		return ERR_EXCEED_MAX_NUM;
 	}
+
 	krnl_tasks++;
 	krnl_task = &krnl_tcb[i];
 	krnl_task->id = i;
@@ -257,6 +258,11 @@ int32_t hf_spawn(void (*task)(), uint16_t period, uint16_t capacity, uint16_t de
 	krnl_task->bgjobs = 0;
 	krnl_task->deadline_misses = 0;
 	krnl_task->ptask = task;
+
+	if(krnl_task->period == 0 && krnl_task->deadline == 0){
+		krnl_ap_tasks++;
+	}
+
 	stack_size += 3;
 	stack_size >>= 2;
 	stack_size <<= 2;
@@ -278,6 +284,11 @@ int32_t hf_spawn(void (*task)(), uint16_t period, uint16_t capacity, uint16_t de
 	}else{
 		krnl_task->ptask = 0;
 		krnl_tasks--;
+		
+		if(krnl_task->period == 0 && krnl_task->deadline == 0){
+			krnl_ap_tasks--;
+		}
+
 		kprintf("\nKERNEL: task not added (out of memory)");
 		i = ERR_OUT_OF_MEMORY;
 	}
@@ -455,6 +466,10 @@ int32_t hf_kill(uint16_t id)
 	krnl_task->state = TASK_IDLE;
 	krnl_tasks--;
 
+	if ((krnl_task->period == 0) && (krnl_task->deadline == 0)){
+		krnl_ap_tasks--;
+	}
+
 	if (krnl_task->period){
 		k = hf_queue_count(krnl_rt_queue);
 		for (i = 0; i < k; i++)
@@ -464,13 +479,23 @@ int32_t hf_kill(uint16_t id)
 			if (hf_queue_swap(krnl_rt_queue, j, j-1)) panic(PANIC_CANT_SWAP);
 		krnl_task2 = hf_queue_remhead(krnl_rt_queue);
 	}else{
-		k = hf_queue_count(krnl_run_queue);
-		for (i = 0; i < k; i++)
-			if (hf_queue_get(krnl_run_queue, i) == krnl_task) break;
-		if (!k || i == k) panic(PANIC_NO_TASKS_RUN);
-		for (j = i; j > 0; j--)
-			if (hf_queue_swap(krnl_run_queue, j, j-1)) panic(PANIC_CANT_SWAP);
-		krnl_task2 = hf_queue_remhead(krnl_run_queue);
+		if (krnl_task->capacity == 0){
+			k = hf_queue_count(krnl_run_queue);
+			for (i = 0; i < k; i++)
+				if (hf_queue_get(krnl_run_queue, i) == krnl_task) break;
+			if (!k || i == k) panic(PANIC_NO_TASKS_RUN);
+			for (j = i; j > 0; j--)
+				if (hf_queue_swap(krnl_run_queue, j, j-1)) panic(PANIC_CANT_SWAP);
+			krnl_task2 = hf_queue_remhead(krnl_run_queue);
+		} else {
+			k = hf_queue_count(krnl_ap_queue);
+			for (i = 0; i < k; i++)
+				if (hf_queue_get(krnl_ap_queue, i) == krnl_task) break;
+			if (!k || i == k) panic(PANIC_NO_TASKS_AP);
+			for (j = i; j > 0; j--)
+				if (hf_queue_swap(krnl_ap_queue, j, j-1)) panic(PANIC_CANT_SWAP);
+			krnl_task2 = hf_queue_remhead(krnl_ap_queue);
+		}
 	}
 	if (!krnl_task2 || krnl_task2 != krnl_task) panic(PANIC_UNKNOWN_TASK_STATE);
 	
