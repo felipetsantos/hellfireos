@@ -109,8 +109,12 @@ static void idletask(void)
 }
 
 void polling_server(void){
-printf("---começou polling server--\n");
-for(;;){
+	for(;;){
+		polling_server_sched();
+	}
+}
+
+void polling_server_sched(void){
 	int32_t rc;
 	volatile int32_t status;
 	status = _di();
@@ -139,7 +143,6 @@ for(;;){
 	}else{
 		panic(PANIC_NO_TASKS_LEFT);
 	}
-}
 }
 /**
  * @internal
