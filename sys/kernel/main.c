@@ -94,8 +94,8 @@ static void init_queues(void)
 	if (krnl_delay_queue == NULL) panic(PANIC_OOM);
 	krnl_rt_queue = hf_queue_create(MAX_TASKS);
 	if (krnl_rt_queue == NULL) panic(PANIC_OOM);
-        krnl_ap_queue = hf_queue_create(MAX_TASKS);
-        if (krnl_ap_queue == NULL) panic(PANIC_OOM);
+	//if (krnl_ap_queue == NULL) panic(PANIC_OOM);
+	krnl_ap_queue = hf_queue_create(MAX_TASKS);
 }
 
 static void idletask(void)
@@ -107,6 +107,25 @@ static void idletask(void)
 	
 	for (;;){
 		_cpu_idle();
+	}
+}
+
+static void process_ap_queue(void)
+{
+	int32_t i, k;
+	struct tcb_entry *krnl_task2;
+	
+	k = hf_queue_count(krnl_ap_queue);
+	if(k > 0) 
+		printf("\n total AP tasks = (%d)", k);
+	for (i = 0; i < k; i++){
+		krnl_task2 = hf_queue_remhead(krnl_ap_queue);
+		//if (!krnl_task2) panic(PANIC_NO_TASKS_DELAY);
+		if (krnl_task2->capacity_rem > 0){
+			if (hf_queue_addtail(krnl_ap_queue, krnl_task2)) panic(PANIC_CANT_PLACE_AP);						
+		}else {
+			hf_kill(krnl_task2->id);
+		}
 	}
 }
 
@@ -134,6 +153,7 @@ void polling_server_sched(void){
 	if (krnl_task->pstack[0] != STACK_MAGIC)
 		panic(PANIC_STACK_OVERFLOW);
 	if ((krnl_tasks > 0) && (krnl_ap_tasks > 0)){
+		process_ap_queue();
 		krnl_current_task = krnl_pcb.sched_ap();
 		krnl_task->state = TASK_RUNNING;
 		krnl_pcb.coop_cswitch++;
@@ -181,7 +201,7 @@ int main(void)
 		hf_spawn(idletask, 0, 0, 0, "idle task", 1024);
 		_device_init();
 		_task_init();
-		hf_spawn(polling_server, 2, 1, 2, "polling server", 1024);
+		hf_spawn(polling_server, 5,2, 5, "polling server", 1024);
 		app_main();
 		_restoreexec(krnl_task->task_context, 1, krnl_current_task);
 		panic(PANIC_ABORTED);

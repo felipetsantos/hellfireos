@@ -34,8 +34,8 @@ static void process_delay_queue(void)
 		if (--krnl_task2->delay == 0){
 			if (krnl_task2->period){
 				if (hf_queue_addtail(krnl_rt_queue, krnl_task2)) panic(PANIC_CANT_PLACE_RT);
-			}else{
-				if (hf_queue_addtail(krnl_run_queue, krnl_task2)) panic(PANIC_CANT_PLACE_RUN);
+			}else{	
+				if (hf_queue_addtail(krnl_run_queue, krnl_task2)) panic(PANIC_CANT_PLACE_RUN);			
 			}
 		}else{
 			if (hf_queue_addtail(krnl_delay_queue, krnl_task2)) panic(PANIC_CANT_PLACE_DELAY);
@@ -63,8 +63,8 @@ static void rt_queue_next()
 
 static void ap_queue_next(){
         krnl_task = hf_queue_remhead(krnl_ap_queue);
-        //if (!krnl_task)
-        //        panic(PANIC_NO_TASKS_AP);
+        if (!krnl_task)
+        	panic(PANIC_NO_TASKS_AP);
 
 }
 
@@ -286,13 +286,26 @@ int32_t sched_rma(void)
 }
 
 int32_t sched_ap(void){
+	uint16_t id = 0;
+	
 	if (hf_queue_count(krnl_ap_queue) == 0)
 		return 0;
 	do {
 		ap_queue_next();
+		if (krnl_task->capacity_rem > 0 && !id){
+			id = krnl_task->id;
+			--krnl_task->capacity_rem;
+		}
 	} while (krnl_task->state == TASK_BLOCKED);
-	krnl_task->apjobs++;
+	
+	if (id){
+		krnl_task = &krnl_tcb[id];
+		krnl_task->apjobs++;
+		return id;
+	}else{
+		krnl_task = &krnl_tcb[0];
+		return 0;
+	}
 
 	return krnl_task->id;
 }
-
