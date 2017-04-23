@@ -62,12 +62,10 @@ static void rt_queue_next()
 }
 
 static void ap_queue_next(){
-        krnl_task = hf_queue_remhead(krnl_ap_queue);
-        if (!krnl_task)
-        	panic(PANIC_NO_TASKS_AP);
-
+	krnl_task = hf_queue_remhead(krnl_ap_queue);
+	if (!krnl_task)
+		panic(PANIC_NO_TASKS_AP);
 }
-
 
 /**
  * @brief Task dispatcher.
@@ -89,7 +87,7 @@ static void ap_queue_next(){
 void dispatch_isr(void *arg)
 {
 	int32_t rc;
-
+	
 #if KERNEL_LOG >= 1
 	dprintf("dispatch %d ", (uint32_t)_read_us());
 #endif
@@ -106,6 +104,8 @@ void dispatch_isr(void *arg)
 		panic(PANIC_STACK_OVERFLOW);
 	if (krnl_tasks > 0){
 		process_delay_queue();
+		if (krnl_task->capacity && (krnl_task->period == 0) && (krnl_task->deadline == 0))
+			hf_queue_addtail(krnl_ap_queue, krnl_task);
 		krnl_current_task = krnl_pcb.sched_rt();
 		if (krnl_current_task == 0)
 			krnl_current_task = krnl_pcb.sched_be();
@@ -287,7 +287,7 @@ int32_t sched_rma(void)
 
 int32_t sched_ap(void){
 	uint16_t id = 0;
-	
+
 	if (hf_queue_count(krnl_ap_queue) == 0)
 		return 0;
 	do {

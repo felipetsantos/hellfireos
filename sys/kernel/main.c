@@ -116,11 +116,9 @@ static void process_ap_queue(void)
 	struct tcb_entry *krnl_task2;
 	
 	k = hf_queue_count(krnl_ap_queue);
-	if(k > 0) 
-		printf("\n total AP tasks = (%d)", k);
+
 	for (i = 0; i < k; i++){
 		krnl_task2 = hf_queue_remhead(krnl_ap_queue);
-		//if (!krnl_task2) panic(PANIC_NO_TASKS_DELAY);
 		if (krnl_task2->capacity_rem > 0){
 			if (hf_queue_addtail(krnl_ap_queue, krnl_task2)) panic(PANIC_CANT_PLACE_AP);						
 		}else {
@@ -156,7 +154,8 @@ void polling_server_sched(void){
 		process_ap_queue();
 		krnl_current_task = krnl_pcb.sched_ap();
 		krnl_task->state = TASK_RUNNING;
-		krnl_pcb.coop_cswitch++;
+		// krnl_pcb.coop_cswitch++;
+		krnl_pcb.preempt_cswitch++;
 #if KERNEL_LOG >= 1
 		dprintf("\n%d %d %d %d %d ", krnl_current_task, krnl_task->period, krnl_task->capacity, krnl_task->deadline, (uint32_t)_read_us());
 #endif
