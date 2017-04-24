@@ -149,7 +149,7 @@ void polling_server_sched(void){
 		krnl_task->state = TASK_READY;
 	if (krnl_task->pstack[0] != STACK_MAGIC)
 		panic(PANIC_STACK_OVERFLOW);
-	if ((krnl_tasks > 0) && (krnl_ap_tasks > 0)){
+	//if ((krnl_tasks > 0) && (krnl_ap_tasks > 0)){
 		//process_ap_queue();
 		krnl_current_task = krnl_pcb.sched_ap();
 		krnl_task->state = TASK_RUNNING;
@@ -160,7 +160,7 @@ void polling_server_sched(void){
 #endif
 		_restoreexec(krnl_task->task_context, status, krnl_current_task);
 		panic(PANIC_UNKNOWN);
-	}
+	//}
 }
 /**
  * @internal
