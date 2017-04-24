@@ -15,7 +15,7 @@ void task2(void){
 	id = hf_selfid();
 	for(;;){
 		jobs = hf_jobs(id);
-		printf("\n%s (%d)[%d][%d]", hf_selfname(), id, hf_jobs(id), hf_dlm(id));
+		printf("\n%s (%d)[%d]", hf_selfname(), id, hf_jobs(id));
 		while (jobs == hf_jobs(id));
 	}
 }
@@ -24,7 +24,7 @@ void task_generator(void){
 	int32_t jobs, id;	
 	for(;;){
 		int32_t r = (random() % 140) + 60;
-		printf("\n%s (%d)[%d][%d]", hf_selfname(), id, hf_jobs(id), hf_dlm(id));
+		printf("\n%s (%d)[%d]", hf_selfname(), id, hf_jobs(id));
 		delay_ms(r);
 		hf_spawn(task2, 0, 3, 0, "aperiodic", 2048);
 	}	

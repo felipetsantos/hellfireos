@@ -304,15 +304,16 @@ int32_t sched_ap(void){
 		}
 		do {
 			ap_queue_next();
+			/*
 			if(!id){
 				if (krnl_task->capacity_rem > 0){
 					id = krnl_task->id;
 					--krnl_task->capacity_rem;
 					hf_queue_addtail(krnl_ap_queue, krnl_task);
 				}
-			}
+			}*/
 		} while (krnl_task->state == TASK_BLOCKED);
-		
+		/*
 		if (id){
 			krnl_task = &krnl_tcb[id];
 			krnl_task->apjobs++;
@@ -320,7 +321,7 @@ int32_t sched_ap(void){
 		}else{
 			krnl_task = &krnl_tcb[0];
 			return 0;
-		}
+		}*/
 
 		return krnl_task->id;
 }
