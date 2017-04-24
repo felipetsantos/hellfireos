@@ -313,7 +313,12 @@ int32_t sched_ap(void){
 			ap_queue_next();
 
 			if(krnl_tcb[previusId].period == 0 && krnl_tcb[previusId].deadline == 0 && krnl_tcb[previusId].capacity != 0){
-				hf_removeAp(previusId);
+				--krnl_tcb[previusId].capacity_rem;
+				if(krnl_tcb[previusId].capacity_rem == 0){
+					hf_removeAp(previusId);
+				} else {
+					hf_queue_addtail(krnl_ap_queue, krnl_tcb[previusId]);
+				}
 			}
 			/*
 			if(!id){
