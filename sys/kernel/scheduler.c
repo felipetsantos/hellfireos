@@ -63,8 +63,6 @@ static void rt_queue_next()
 
 static void ap_queue_next(){
 	krnl_task = hf_queue_remhead(krnl_ap_queue);
-	if (!krnl_task)
-	 	panic(PANIC_NO_TASKS_AP);
 }
 
 
@@ -88,7 +86,7 @@ static void ap_queue_next(){
 void dispatch_isr(void *arg)
 {
 	int32_t rc;
-	int previusId;
+	uint16_t previusId;
 #if KERNEL_LOG >= 1
 	dprintf("dispatch %d ", (uint32_t)_read_us());
 #endif
