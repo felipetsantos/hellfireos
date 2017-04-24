@@ -88,7 +88,7 @@ static void ap_queue_next(){
 void dispatch_isr(void *arg)
 {
 	int32_t rc;
-	
+	int oldId;
 #if KERNEL_LOG >= 1
 	dprintf("dispatch %d ", (uint32_t)_read_us());
 #endif
@@ -106,7 +106,9 @@ void dispatch_isr(void *arg)
 	if (krnl_tasks > 0){
 		process_delay_queue();	
 		krnl_current_task = krnl_pcb.sched_rt();	
-
+		if(krnl_tcb[previusId].period == 0 && krnl_tcb[previusId].deadline == 0 && krnl_tcb[previusId].capacity != 0){
+				hf_kill(previusId);
+		}
 		if (krnl_current_task == 0) 
 			krnl_current_task = krnl_pcb.sched_be();
 		
@@ -296,14 +298,19 @@ int32_t sched_rma(void)
  * 
  */
 int32_t sched_ap(void){
-		uint16_t id = 0;
+		uint16_t previusId = krnl_current_task;
 		
 		if (hf_queue_count(krnl_ap_queue) == 0){
 			krnl_task = &krnl_tcb[0];
 			return 0;
 		}
+
 		do {
 			ap_queue_next();
+
+			if(krnl_tcb[previusId].period == 0 && krnl_tcb[previusId].deadline == 0 && krnl_tcb[previusId].capacity != 0){
+				hf_kill(previusId);
+			}
 			/*
 			if(!id){
 				if (krnl_task->capacity_rem > 0){
