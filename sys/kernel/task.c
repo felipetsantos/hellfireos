@@ -426,6 +426,42 @@ int32_t hf_resume(uint16_t id)
 	return ERR_OK;
 }
 
+
+void hf_removeAp(uint16_t id){
+	volatile uint32_t status;
+	int32_t i, j, k;
+	struct tcb_entry *krnl_task2;
+
+#if KERNEL_LOG == 2
+	dprintf("hf_kill() %d ", (uint32_t)_read_us());
+#endif
+	status = _di();
+	if (id == 0){
+		kprintf("\nKERNEL: can't kill the idle task");
+		_ei(status);
+		return ERR_INVALID_ID;
+	}
+	krnl_task = &krnl_tcb[id];
+	if ((krnl_task->ptask == 0) || (id >= MAX_TASKS)){
+		kprintf("\nKERNEL: task doesn't exist");
+		krnl_task = &krnl_tcb[krnl_current_task];
+		_ei(status);
+		return ERR_INVALID_ID;
+	}
+
+	krnl_task->id = -1;
+	krnl_task->ptask = 0;
+	hf_free(krnl_task->pstack);
+	_set_task_sp(krnl_task->id, 0);
+	_set_task_tp(krnl_task->id, 0);
+	krnl_task->state = TASK_IDLE;
+	krnl_tasks--;
+
+	if ((krnl_task->period == 0) && (krnl_task->deadline == 0) && (krnl_task->capacity != 0)){
+		krnl_ap_tasks--;
+	}
+	krnl_task = &krnl_tcb[krnl_current_task];
+}
 /**
  * @brief Kills a task.
  * 
