@@ -21,7 +21,7 @@ void task2(void){
 }
 
 void task_generator(void){
-	int32_t jobs, id;	
+	int32_t id;	
 	for(;;){
 		int32_t r = (random() % 140) + 60;
 		printf("\n%s (%d)[%d]", hf_selfname(), id, hf_jobs(id));
