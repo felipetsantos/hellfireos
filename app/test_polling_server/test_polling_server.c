@@ -31,8 +31,8 @@ void task_generator(void){
 }
 void app_main(void){
 	hf_spawn(task, 4, 1, 4, "task 1", 2048);
-	//hf_spawn(task, 8, 2, 8, "task 2", 2048);
-	// hf_spawn(task, 12, 3, 12, "task 3", 2048);
+	hf_spawn(task, 8, 2, 8, "task 2", 2048);
+	hf_spawn(task, 12, 3, 12, "task 3", 2048);
 	hf_spawn(task_generator, 0, 0, 0, "task generator", 2048);
 }
 

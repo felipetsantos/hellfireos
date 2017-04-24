@@ -300,7 +300,7 @@ int32_t sched_ap(void){
 		uint16_t previusId = krnl_current_task;
 		
 		if (hf_queue_count(krnl_ap_queue) == 0){
-			krnl_task = &krnl_tcb[0];
+			//krnl_task = &krnl_tcb[0];
 			return 0;
 		}
 

@@ -152,6 +152,9 @@ void polling_server_sched(void){
 	//if ((krnl_tasks > 0) && (krnl_ap_tasks > 0)){
 		//process_ap_queue();
 		krnl_current_task = krnl_pcb.sched_ap();
+		if(krnl_current_task == 0){
+			krnl_current_task = krnl_pcb.sched_be();
+		}
 		krnl_task->state = TASK_RUNNING;
 		krnl_pcb.coop_cswitch++;
 		//krnl_pcb.preempt_cswitch++;
@@ -197,7 +200,7 @@ int main(void)
 		hf_spawn(idletask, 0, 0, 0, "idle task", 1024);
 		_device_init();
 		_task_init();
-		hf_spawn(polling_server, 5, 3, 5, "polling server", 1024);
+		hf_spawn(polling_server, 7, 3, 7, "polling server", 1024);
 		app_main();
 		_restoreexec(krnl_task->task_context, 1, krnl_current_task);
 		panic(PANIC_ABORTED);
