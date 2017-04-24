@@ -160,8 +160,6 @@ void polling_server_sched(void){
 #endif
 		_restoreexec(krnl_task->task_context, status, krnl_current_task);
 		panic(PANIC_UNKNOWN);
-	}else{
-		panic(PANIC_NO_TASKS_LEFT);
 	}
 }
 /**
