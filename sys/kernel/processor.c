@@ -85,6 +85,8 @@ int32_t hf_cpuload(uint16_t id)
 			if (krnl_task2->state != TASK_BLOCKED){
 				if (krnl_task2->period)
 					s += krnl_task2->rtjobs;
+				else if(krnl_task2->period == 0 && krnl_task2->deadline == 0 && krnl_task2->capacity != 0)
+					s += krnl_task2->apjobs;
 				else
 					s += krnl_task2->bgjobs;
 			}
@@ -95,6 +97,8 @@ int32_t hf_cpuload(uint16_t id)
 		if (krnl_tcb[id].ptask){
 			if (krnl_tcb[id].period)
 				n = (krnl_tcb[id].rtjobs * 100) / s;
+			else if(krnl_tcb[id].period == 0 && krnl_tcb[id].deadline == 0 && krnl_tcb[id].capacity != 0)
+				n = (krnl_tcb[id].apjobs * 100) / s;
 			else
 				n = (krnl_tcb[id].bgjobs * 100) / s;
 			
