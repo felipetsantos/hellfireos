@@ -63,35 +63,10 @@ static void rt_queue_next()
 
 static void ap_queue_next(){
 	krnl_task = hf_queue_remhead(krnl_ap_queue);
-	// if (!krnl_task)
-	// 	panic(PANIC_NO_TASKS_AP);
+	if (!krnl_task)
+	 	panic(PANIC_NO_TASKS_AP);
 }
 
-int32_t sched_ap(void){
-	uint16_t id = 0;
-	
-	if (hf_queue_count(krnl_ap_queue) == 0)
-		return 0;
-	do {
-		ap_queue_next();
-		if (krnl_task->capacity_rem > 0 && !id){
-			id = krnl_task->id;
-			--krnl_task->capacity_rem;
-			hf_queue_addtail(krnl_ap_queue, krnl_task);
-		}
-	} while (krnl_task->state == TASK_BLOCKED);
-	
-	if (id){
-		krnl_task = &krnl_tcb[id];
-		krnl_task->apjobs++;
-		return id;
-	}else{
-		krnl_task = &krnl_tcb[0];
-		return 0;
-	}
-
-	return krnl_task->id;
-}
 
 /**
  * @brief Task dispatcher.
@@ -310,4 +285,38 @@ int32_t sched_rma(void)
 		krnl_task = &krnl_tcb[0];
 		return 0;
 	}
+
+	
+}
+
+/**
+ * @brief Aperiodic scheduler.
+ * 
+ * @return Aperiodic task id.
+ * 
+ */
+int32_t sched_ap(void){
+		uint16_t id = 0;
+		
+		if (hf_queue_count(krnl_ap_queue) == 0)
+			return 0;
+		do {
+			ap_queue_next();
+			if (krnl_task->capacity_rem > 0 && !id){
+				id = krnl_task->id;
+				--krnl_task->capacity_rem;
+				hf_queue_addtail(krnl_ap_queue, krnl_task);
+			}
+		} while (krnl_task->state == TASK_BLOCKED);
+		
+		if (id){
+			krnl_task = &krnl_tcb[id];
+			krnl_task->apjobs++;
+			return id;
+		}else{
+			krnl_task = &krnl_tcb[0];
+			return 0;
+		}
+
+		return krnl_task->id;
 }
