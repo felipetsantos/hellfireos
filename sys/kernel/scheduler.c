@@ -88,13 +88,14 @@ static void ap_queue_next(){
 void dispatch_isr(void *arg)
 {
 	int32_t rc;
-	int oldId;
+	int previusId;
 #if KERNEL_LOG >= 1
 	dprintf("dispatch %d ", (uint32_t)_read_us());
 #endif
 	_timer_reset();
 	if (krnl_schedule == 0) return;
 	krnl_task = &krnl_tcb[krnl_current_task];
+	previusId = krnl_current_task;
 	rc = setjmp(krnl_task->task_context);
 	if (rc){
 		return;
