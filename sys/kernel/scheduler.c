@@ -310,8 +310,6 @@ int32_t sched_ap(void){
 					--krnl_task->capacity_rem;
 					hf_queue_addtail(krnl_ap_queue, krnl_task);
 				}
-			}else{
-				id = krnl_task->id;	
 			}
 		} while (krnl_task->state == TASK_BLOCKED);
 		

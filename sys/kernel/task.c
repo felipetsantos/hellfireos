@@ -126,6 +126,8 @@ int32_t hf_jobs(uint16_t id)
 		if (krnl_tcb[id].ptask){
 			if (krnl_tcb[id].period)
 				return krnl_tcb[id].rtjobs;
+			else if(krnl_task->period == 0 && krnl_task->deadline == 0 && krnl_task->capacity != 0)
+				return krnl_tcb[id].apjobs;
 			else
 				if(krnl_tcb[id].capacity)
 					return krnl_tcb[id].apjobs;
@@ -261,7 +263,7 @@ int32_t hf_spawn(void (*task)(), uint16_t period, uint16_t capacity, uint16_t de
 	krnl_task->deadline_misses = 0;
 	krnl_task->ptask = task;
 
-	if(krnl_task->period == 0 && krnl_task->deadline == 0){
+	if(krnl_task->period == 0 && krnl_task->deadline == 0 && krnl_task->capacity != 0){
 		krnl_ap_tasks++;
 	}
 
@@ -286,7 +288,7 @@ int32_t hf_spawn(void (*task)(), uint16_t period, uint16_t capacity, uint16_t de
 		krnl_task->ptask = 0;
 		krnl_tasks--;
 		
-		if(krnl_task->period == 0 && krnl_task->deadline == 0){
+		if(krnl_task->period == 0 && krnl_task->deadline == 0 && krnl_task->capacity != 0){
 			krnl_ap_tasks--;
 		}
 
@@ -467,7 +469,7 @@ int32_t hf_kill(uint16_t id)
 	krnl_task->state = TASK_IDLE;
 	krnl_tasks--;
 
-	if ((krnl_task->period == 0) && (krnl_task->deadline == 0)){
+	if ((krnl_task->period == 0) && (krnl_task->deadline == 0) && (krnl_task->capacity != 0)){
 		krnl_ap_tasks--;
 	}
 
