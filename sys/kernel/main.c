@@ -150,11 +150,8 @@ void polling_server_sched(void){
 	if (krnl_task->pstack[0] != STACK_MAGIC)
 		panic(PANIC_STACK_OVERFLOW);
 	if ((krnl_tasks > 0) && (krnl_ap_tasks > 0)){
-		process_ap_queue();
+		//process_ap_queue();
 		krnl_current_task = krnl_pcb.sched_ap();
-		// if(krnl_current_task) {
-		// 	printf("\nCURRENT AP: %d", krnl_current_task);
-		// }
 		krnl_task->state = TASK_RUNNING;
 		krnl_pcb.coop_cswitch++;
 		//krnl_pcb.preempt_cswitch++;
