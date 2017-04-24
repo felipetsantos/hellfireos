@@ -126,11 +126,9 @@ int32_t hf_jobs(uint16_t id)
 		if (krnl_tcb[id].ptask){
 			if (krnl_tcb[id].period)
 				return krnl_tcb[id].rtjobs;
-			else if(krnl_task->period == 0 && krnl_task->deadline == 0 && krnl_task->capacity != 0)
+			else if(krnl_tcb[id].period == 0 && krnl_tcb[id].deadline == 0 && krnl_tcb[id].capacity != 0)
 				return krnl_tcb[id].apjobs;
 			else
-				if(krnl_tcb[id].capacity)
-					return krnl_tcb[id].apjobs;
 				return krnl_tcb[id].bgjobs;
 		}
 	return ERR_INVALID_ID;

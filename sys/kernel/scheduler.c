@@ -322,6 +322,7 @@ int32_t sched_ap(void){
 			krnl_task = &krnl_tcb[0];
 			return 0;
 		}*/
-
+		//	krnl_task = &krnl_tcb[id];
+		krnl_task->apjobs++;
 		return krnl_task->id;
 }
