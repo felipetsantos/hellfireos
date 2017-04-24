@@ -106,7 +106,12 @@ void dispatch_isr(void *arg)
 		process_delay_queue();	
 		krnl_current_task = krnl_pcb.sched_rt();	
 		if(krnl_tcb[previusId].period == 0 && krnl_tcb[previusId].deadline == 0 && krnl_tcb[previusId].capacity != 0){
+			--krnl_tcb[previusId].capacity_rem;
+			if(krnl_tcb[previusId].capacity_rem == 0){
 				hf_removeAp(previusId);
+			} else {
+				hf_queue_addtail(krnl_ap_queue, krnl_tcb[previusId]);
+			}
 		}
 		if (krnl_current_task == 0) 
 			krnl_current_task = krnl_pcb.sched_be();
