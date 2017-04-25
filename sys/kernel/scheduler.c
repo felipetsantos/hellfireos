@@ -86,7 +86,7 @@ static void ap_queue_next(){
 void dispatch_isr(void *arg)
 {
 	int32_t rc;
-	uint16_t previusId;
+	uint16_t previousId;
 #if KERNEL_LOG >= 1
 	dprintf("dispatch %d ", (uint32_t)_read_us());
 #endif
@@ -105,13 +105,13 @@ void dispatch_isr(void *arg)
 	if (krnl_tasks > 0){
 		process_delay_queue();	
 		krnl_current_task = krnl_pcb.sched_rt();	
-		struct tcb_entry *previus_task = &krnl_tcb[previusId];
-		if(previus_task->period == 0 && previus_task->deadline == 0 && previus_task->capacity != 0){
-			--previus_task->capacity_rem;
-			if(previus_task->capacity_rem == 0){
-				hf_removeAp(previusId);
+		struct tcb_entry *previous_task = &krnl_tcb[previousId];
+		if(previous_task->period == 0 && previous_task->deadline == 0 && previous_task->capacity != 0){
+			--previous_task->capacity_rem;
+			if(previous_task->capacity_rem == 0){
+				hf_removeAp(previousId);
 			} else {
-				hf_queue_addtail(krnl_ap_queue, previus_task);
+				hf_queue_addtail(krnl_ap_queue, previous_task);
 			}
 		}
 		if (krnl_current_task == 0) 
@@ -303,43 +303,24 @@ int32_t sched_rma(void)
  * 
  */
 int32_t sched_ap(void){
-		uint16_t previusId = krnl_current_task;
+		uint16_t previousId = krnl_current_task;
 		
 		if (hf_queue_count(krnl_ap_queue) == 0){
-			//krnl_task = &krnl_tcb[0];
 			return 0;
 		}
 
 		do {
 			ap_queue_next();
-			struct tcb_entry *previus_task = &krnl_tcb[previusId];
-			if(previus_task->period == 0 && previus_task->deadline == 0 && previus_task->capacity != 0){
-				--previus_task->capacity_rem;
-				if(previus_task->capacity_rem == 0){
-					hf_removeAp(previusId);
+			struct tcb_entry *previous_task = &krnl_tcb[previousId];
+			if(previous_task->period == 0 && previous_task->deadline == 0 && previous_task->capacity != 0){
+				--previous_task->capacity_rem;
+				if(previous_task->capacity_rem == 0){
+					hf_removeAp(previousId);
 				} else {
-					hf_queue_addtail(krnl_ap_queue, previus_task);
+					hf_queue_addtail(krnl_ap_queue, previous_task);
 				}
 			}
-			/*
-			if(!id){
-				if (krnl_task->capacity_rem > 0){
-					id = krnl_task->id;
-					--krnl_task->capacity_rem;
-					hf_queue_addtail(krnl_ap_queue, krnl_task);
-				}
-			}*/
 		} while (krnl_task->state == TASK_BLOCKED);
-		/*
-		if (id){
-			krnl_task = &krnl_tcb[id];
-			krnl_task->apjobs++;
-			return id;
-		}else{
-			krnl_task = &krnl_tcb[0];
-			return 0;
-		}*/
-		//	krnl_task = &krnl_tcb[id];
 		krnl_task->apjobs++;
 		return krnl_task->id;
 }
