@@ -93,7 +93,7 @@ void dispatch_isr(void *arg)
 	_timer_reset();
 	if (krnl_schedule == 0) return;
 	krnl_task = &krnl_tcb[krnl_current_task];
-	previusId = krnl_current_task;
+	previousId = krnl_current_task;
 	rc = setjmp(krnl_task->task_context);
 	if (rc){
 		return;
