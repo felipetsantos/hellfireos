@@ -258,6 +258,7 @@ int32_t hf_spawn(void (*task)(), uint16_t period, uint16_t capacity, uint16_t de
 	krnl_task->deadline_rem = deadline;
 	krnl_task->rtjobs = 0;
 	krnl_task->bgjobs = 0;
+	krnl_task->apjobs = 0;
 	krnl_task->deadline_misses = 0;
 	krnl_task->ptask = task;
 
