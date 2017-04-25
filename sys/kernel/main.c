@@ -110,22 +110,6 @@ static void idletask(void)
 	}
 }
 
-void process_ap_queue(void)
-{
-	int32_t i, k;
-	struct tcb_entry *krnl_task2;
-	
-	k = hf_queue_count(krnl_ap_queue);
-	for (i = 0; i < k; i++){
-		krnl_task2 = hf_queue_remhead(krnl_ap_queue);
-		if (krnl_task2->capacity_rem > 0){
-			if (hf_queue_addtail(krnl_ap_queue, krnl_task2)) panic(PANIC_CANT_PLACE_AP);						
-		}else {
-			//hf_kill(krnl_task2->id);
-		}
-	}
-}
-
 void polling_server(void){
 	for(;;){
 		polling_server_sched();
@@ -149,21 +133,17 @@ void polling_server_sched(void){
 		krnl_task->state = TASK_READY;
 	if (krnl_task->pstack[0] != STACK_MAGIC)
 		panic(PANIC_STACK_OVERFLOW);
-	//if ((krnl_tasks > 0) && (krnl_ap_tasks > 0)){
-		//process_ap_queue();
-		krnl_current_task = krnl_pcb.sched_ap();
-		if(krnl_current_task == 0){
-			krnl_current_task = krnl_pcb.sched_be();
-		}
-		krnl_task->state = TASK_RUNNING;
-		krnl_pcb.coop_cswitch++;
-		//krnl_pcb.preempt_cswitch++;
+	krnl_current_task = krnl_pcb.sched_ap();
+	if(krnl_current_task == 0){
+		krnl_current_task = krnl_pcb.sched_be();
+	}
+	krnl_task->state = TASK_RUNNING;
+	krnl_pcb.coop_cswitch++;
 #if KERNEL_LOG >= 1
-		dprintf("\n%d %d %d %d %d ", krnl_current_task, krnl_task->period, krnl_task->capacity, krnl_task->deadline, (uint32_t)_read_us());
+	dprintf("\n%d %d %d %d %d ", krnl_current_task, krnl_task->period, krnl_task->capacity, krnl_task->deadline, (uint32_t)_read_us());
 #endif
-		_restoreexec(krnl_task->task_context, status, krnl_current_task);
-		panic(PANIC_UNKNOWN);
-	//}
+	_restoreexec(krnl_task->task_context, status, krnl_current_task);
+	panic(PANIC_UNKNOWN);
 }
 /**
  * @internal
