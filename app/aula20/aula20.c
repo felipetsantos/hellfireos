@@ -68,9 +68,8 @@ void t2(void){
 		val = hf_recvack(&cpu1, &task1, buf1, &size1, 0);
 		printf("CPU %d, executando tarefa 2.\n", hf_cpuid());
 		printf("tarefa 2, CPU %d recebeu buffer da tarefa 1 com aresta %d\n", hf_cpuid(), size1);
-
-
-
+		delay_ms(10);
+		
 		gen_rdm_bytestream (320, buf7);
 		val7 = hf_sendack(2, 5007, buf7, 320, 0, 500);
 		free(buf7);
@@ -163,6 +162,8 @@ void t5(void){
 		val1 = hf_recvack(&cpu1, &task1, buf1, &size1, 0);
 		printf("\nCPU %d, executando tarefa 5.", hf_cpuid());
 		printf("\ntarefa 5, CPU %d recebeu buffer da tarefa 1 com aresta %d\n", hf_cpuid(), size1);
+		delay_ms(10);
+
 		gen_rdm_bytestream (640, buf8);
 		val8 = hf_sendack(5, 5008, buf8, 640, 0, 500);
 		free(buf8);
