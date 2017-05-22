@@ -25,15 +25,15 @@ void t1(void) {
 
 	while(1) {
 
-		gen_rdm_bytestream (64, buf4);
-		val4 = hf_sendack(0, 5004, buf4, 64, 0, 500);
-		free(buf4);
-		printf("Tarefa 1, CPU %d, enviou msg para tarefa 4.\n", hf_cpuid());
-
 		gen_rdm_bytestream (64, buf5);
 		val5 = hf_sendack(1, 5005, buf5, 64, 0, 500);
 		free(buf5);
 		printf("Tarefa 1, CPU %d, enviou msg para tarefa 5.\n", hf_cpuid());
+
+		gen_rdm_bytestream (64, buf4);
+		val4 = hf_sendack(0, 5004, buf4, 64, 0, 500);
+		free(buf4);
+		printf("Tarefa 1, CPU %d, enviou msg para tarefa 4.\n", hf_cpuid());
 
 		gen_rdm_bytestream (64, buf3);
 		val3 = hf_sendack(3, 5003, buf3, 64, 0, 500);
@@ -76,13 +76,16 @@ void t2(void){
 		free(buf7);
 		printf("Tarefa 2, CPU %d, enviou msg para tarefa 7.\n", hf_cpuid());
 
+
 		gen_rdm_bytestream (320, buf8);
-		val8 = hf_sendack(2, 5008, buf8, 320, 0, 500);
+		val8 = hf_sendack(5, 5008, buf8, 320, 0, 500);
 		free(buf8);
 		printf("Tarefa 2, CPU %d, enviou msg para tarefa 8.\n", hf_cpuid());
+		
+		delay_ms(10);
 
 		gen_rdm_bytestream (64, buf6);
-		val6 = hf_sendack(5, 5006, buf6, 64, 0, 500);
+		val6 = hf_sendack(0, 5006, buf6, 64, 0, 500);
 		free(buf6);
 		printf("Tarefa 2, CPU %d, enviou msg para tarefa 6.\n", hf_cpuid());
 
@@ -110,9 +113,10 @@ void t3(void){
 		val7 = hf_sendack(2, 5007, buf7, 320, 0, 500);
 		free(buf7);
 		printf("Tarefa 3, CPU %d, enviou msg para tarefa 7.\n", hf_cpuid());
+		delay_ms(10);
 
 		gen_rdm_bytestream (64, buf8);
-		val8 = hf_sendack(2, 5008, buf8, 64, 0, 500);
+		val8 = hf_sendack(5, 5008, buf8, 64, 0, 500);
 		free(buf8);
 		printf("Tarefa 3, CPU %d, enviou msg para tarefa 8.\n", hf_cpuid());
 
@@ -135,12 +139,11 @@ void t4(void){
 		val1 = hf_recvack(&cpu1, &task1, buf1, &size1, 0);
 		printf("\nCPU %d, executando tarefa 4.", hf_cpuid());
 		printf("\ntarefa 4, CPU %d recebeu buffer da tarefa 1 com aresta %d\n", hf_cpuid(), size1);
-
+		delay_ms(10);
 		gen_rdm_bytestream (64, buf8);
-		val8 = hf_sendack(2, 5008, buf8, 64, 0, 500);
+		val8 = hf_sendack(5, 5008, buf8, 64, 0, 500);
 		free(buf8);
 		printf("Tarefa 4, CPU %d, enviou msg para tarefa 8.\n", hf_cpuid());
-
 		delay_ms(10);
 	}
 
@@ -160,9 +163,8 @@ void t5(void){
 		val1 = hf_recvack(&cpu1, &task1, buf1, &size1, 0);
 		printf("\nCPU %d, executando tarefa 5.", hf_cpuid());
 		printf("\ntarefa 5, CPU %d recebeu buffer da tarefa 1 com aresta %d\n", hf_cpuid(), size1);
-
 		gen_rdm_bytestream (640, buf8);
-		val8 = hf_sendack(2, 5008, buf8, 640, 0, 500);
+		val8 = hf_sendack(5, 5008, buf8, 640, 0, 500);
 		free(buf8);
 		printf("Tarefa 5, CPU %d, enviou msg para tarefa 8.\n", hf_cpuid());
 
@@ -308,13 +310,14 @@ void app_main(void)
 	*/
 	if (hf_cpuid() == 0){
 		hf_spawn(t4, 0, 0, 0, "t4", 1024);
+		hf_spawn(t6, 0, 0, 0, "t6", 1024);
 		
 	}else if (hf_cpuid() == 1){
 		hf_spawn(t5, 0, 0, 0, "t5", 1024);
 		hf_spawn(t9, 0, 0, 0, "t9", 1920);
 	}else if (hf_cpuid() == 2){
 		hf_spawn(t7, 0, 0, 0, "t7", 2048);
-		hf_spawn(t8, 0, 0, 0, "t8", 2048);
+		
 	}else if (hf_cpuid() == 3){
 		hf_spawn(t3, 0, 0, 0, "t3", 1024);
 		
@@ -323,6 +326,7 @@ void app_main(void)
 		
 	}else if (hf_cpuid() == 5){
 		hf_spawn(t1, 0, 0, 0, "t1", 6000);
-		hf_spawn(t6, 0, 0, 0, "t6", 1024);
+		hf_spawn(t8, 0, 0, 0, "t8", 2048);
+		
 	}
 }
