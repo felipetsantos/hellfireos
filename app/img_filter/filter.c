@@ -1,4 +1,5 @@
 #include <hellfire.h>
+#include <noc.h>
 #include "image.h"
 
 uint8_t gausian(uint8_t buffer[5][5]){
@@ -147,5 +148,7 @@ void task(void){
 }
 
 void app_main(void) {
-	hf_spawn(task, 0, 0, 0, "filter", 2048);
+	if (hf_cpuid() == 0){
+		hf_spawn(task, 0, 0, 0, "filter", 2048);
+	}
 }
