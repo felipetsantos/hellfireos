@@ -1,4 +1,2 @@
-cd platform/noc_3x2
-make clean
-make images
-cp *.bin ../../usr/sim/mpsoc_sim/objects
+cd usr/sim/mpsoc_sim/
+./mpsoc_sim $1 s 
