@@ -105,10 +105,27 @@ void do_sobel(uint8_t *img, int32_t width, int32_t height){
 	}
 }
 
+// matrix, sub_matrix, height, width, block line, block column, block height, block width
+void create_sub_matrix(uint8_t *a, uint8_t *sub_matrix, uint32_t h, uint32_t w, uint32_t k, uint32_t l, uint32_t bh, uint32_t bw) {
+	int i = 0;
+	int j = 0;
+	
+	while(i < bh) {
+		j = 0;
+		while(j < bw) {
+			sub_matrix[i * w + j] = a[(i + k *bh) * w + (j + 1 * bw)];
+			j = j + 1;
+		}
+		i = i + 1;
+	}
+}
+
 void task(void){
 	uint32_t i, j, k = 0;
 	uint8_t *img;
 	uint32_t time;
+
+	// matrix_print_sub(m, 9, 8, 1, 2, 3, 2)
 	
 	while(1) {
 		img = (uint8_t *) malloc(height * width);
@@ -116,24 +133,31 @@ void task(void){
 			printf("\nmalloc() failed!\n");
 			for(;;);
 		}
+		uint32_t sm_h = 32;
+		uint32_t sm_w = 32;
+
+		uint8_t sub_matrix[sm_h * sm_w];
+		memset(sub_matrix, 0, sm_h * sm_w * sizeof(uint8_t));
+
+	  create_sub_matrix(img, *sub_matrix, sm_h, sm_w, 1, 20, 20, 20);
 
 		printf("\n\nstart of processing!\n\n");
 
 		time = _readcounter();
 
-		do_gausian(img, width, height);
-		do_sobel(img, width, height);
+		do_gausian(sub_matrix, sm_w, sm_h);
+		do_sobel(sub_matrix, sm_w, sm_h);
 
 		time = _readcounter() - time;
 
 		printf("done in %d clock cycles.\n\n", time);
 
-		printf("\n\nint32_t width = %d, height = %d;\n", width, height);
+		printf("\n\nint32_t width = %d, height = %d;\n", width, sm_h);
 		printf("uint8_t image[] = {\n");
-		for (i = 0; i < height; i++){
-			for (j = 0; j < width; j++){
-				printf("0x%x", img[i * width + j]);
-				if ((i < height-1) || (j < width-1)) printf(", ");
+		for (i = 0; i < sm_h; i++){
+			for (j = 0; j < sm_w; j++){
+				printf("0x%x", sub_matrix[i * sm_w + j]);
+				if ((i < sm_h-1) || (j < sm_w-1)) printf(", ");
 				if ((++k % 16) == 0) printf("\n");
 			}
 		}
