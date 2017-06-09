@@ -1,6 +1,12 @@
 #include <hellfire.h>
 #include <noc.h>
 #include "image.h"
+#include <math.h>
+
+#define BW 2 // largura de uma parte da imagem
+#define BH 3 // altura de uma parte da imagem
+#define N_CPU 25 // número de cpus
+
 
 uint8_t gausian(uint8_t buffer[5][5]){
 	int32_t sum = 0, mpixel;
@@ -20,7 +26,7 @@ uint8_t gausian(uint8_t buffer[5][5]){
 	return (uint8_t)mpixel;
 }
 
-uint32_t isqrt(uint32_t a){
+uint32_t isqrt(uint32_t a){ 
 	uint32_t i, rem = 0, root = 0, divisor = 0;
 
 	for (i = 0; i < 16; i++){
@@ -61,6 +67,240 @@ uint8_t sobel(uint8_t buffer[3][3]){
 	if (sum < 0) sum = 0;
 
 	return (uint8_t)sum;
+}
+
+int get_free_cpu(int8_t *work_map){
+	uint8_t i=0;
+	for(i=0; i<N_CPU; i++){
+		if(work_map[i] == -1){
+		 return i;
+		}
+	}
+	return -1;
+}
+
+void init_work_map(int8_t *work_map){
+	uint8_t i=0;
+	for(i=0; i < N_CPU ; i++){
+		work_map[i] = -1;
+	}
+}
+
+int getIndex(int row, int col, int w){
+	return row*w+col;
+}
+
+int shouldMirrorFirstLine(uint8_t p, int32_t wp){
+	if(p <= wp){
+		return 1;
+	}else{
+		return 0;
+	}
+}
+
+int shouldMirrorLastLine(uint8_t p, int32_t wp, int32_t hp){
+	if ( p > ((wp * hp) - wp) ) {
+		return 1;
+	}else{
+		return 0;
+	}
+}
+
+int shouldMirrorFirstCol(uint8_t p, int32_t wp){
+	if ( p%wp == 1 || p == 1 ) {
+		return 1;
+	}else{
+		return 0;
+	}
+}
+
+int shouldMirrorLastCol(uint8_t p, int32_t wp){
+	if ( p%wp == 0 ) {
+		return 1;
+	}else{
+		return 0;
+	}
+}
+
+void treatBoxFirstLine(uint8_t p, uint8_t *buf, int32_t wp, int32_t bl, int32_t bc, int32_t bw, int32_t i, int32_t l, int32_t c){
+	int32_t boxPrevLineI = 0, prevLineI = 0;
+	if(bl-1 == 0 && shouldMirrorFirstLine(p, wp)){
+		if ((bc-1) == 0) {
+			buf[getIndex(bl-1, bc-1, bw+2)] = image[i];
+		}else if (bc == bw && l == 0) {
+			buf[getIndex(bl-1, bc+1, bw+2)] = image[i];
+		}
+		boxPrevLineI = getIndex(bl-1, bc, bw+2);
+		buf[boxPrevLineI] = image[i];
+	}else if(bl-1 == 0){
+		boxPrevLineI = getIndex(bl-1, bc, bw+2);
+		prevLineI = getIndex(l-1, c, width);
+		buf[boxPrevLineI] = image[prevLineI];
+		if ((bc-1) == 0 && c != 0) {
+			buf[getIndex(bl-1, bc-1, bw+2)] = image[getIndex(l-1, c-1, width)];
+		}else if ((bc-1) == 0 && c == 0) {
+			buf[getIndex(bl-1, bc-1, bw+2)] = image[i];
+		}else if (bc == bw && l != 0 && p%wp != 0) {
+			buf[getIndex(bl-1, bc+1, bw+2)] = image[getIndex(l-1, c+1, width)];
+		}else if (bc == bw && l != 0 && p%wp == 0){
+			buf[getIndex(bl-1, bc+1, bw+2)] = image[i];
+		}
+
+	}
+}
+
+void treatBoxFirstCol(uint8_t p, uint8_t *buf, int32_t wp, int32_t bl,int32_t bc, int32_t bw, int32_t i, int32_t l, int32_t c){
+	int32_t boxPrevColI = 0, prevColI =0;
+	if(bc-1 == 0 && shouldMirrorFirstCol(p, wp)) {
+    	boxPrevColI = getIndex(bl, bc-1, bw+2);
+    	buf[boxPrevColI] = image[i];
+	}else if(bc-1 == 0){
+		prevColI = getIndex(l, c-1, width);
+		boxPrevColI = getIndex(bl, bc-1, bw+2);
+		buf[boxPrevColI] = image[prevColI];
+	}
+}
+
+void treatBoxLastLine(uint8_t p, uint8_t *buf, int32_t wp, int32_t hp, int32_t bl,int32_t bc, int32_t bw, int32_t i, int32_t l, int32_t c, int32_t el){
+	int32_t boxLastLineI = 0, lastLineI = 0;
+	if (l == el-1 && shouldMirrorLastLine(p, wp, hp)) {
+		boxLastLineI = getIndex(bl+1, bc, bw+2);
+		buf[boxLastLineI] = image[i];
+
+		if ((bc-1) == 0) {
+			buf[getIndex(bl+1, bc-1, bw+2)] = image[i];
+		}else if (bc == bw) {
+			buf[getIndex(bl+1, bc+1, bw+2)] = image[i];
+		}
+
+	}else if(l == el-1){
+
+		lastLineI = getIndex(l+1, c, width);
+		boxLastLineI = getIndex(bl+1, bc, bw+2);
+		buf[boxLastLineI] = image[lastLineI];
+		if ((bc-1) == 0 && c != 0) {
+			buf[getIndex(bl+1, bc-1, bw+2)] = image[getIndex(l+1, c-1, width)];
+		}else if ((bc-1) == 0 && c == 0) {
+			buf[getIndex(bl+1, bc-1, bw+2)] = image[i];
+		}else if (bc == bw && p%wp != 0) {
+			buf[getIndex(bl+1, bc+1, bw+2)] = image[getIndex(l+1, c+1, width)];
+		}else if (bc == bw && p%wp == 0){
+			buf[getIndex(bl+1, bc+1, bw+2)] = image[i];
+		}
+
+
+	}	
+}
+
+
+void treatBoxLastCol(uint8_t p, uint8_t *buf, int32_t wp, int32_t bl,int32_t bc, int32_t bw, int32_t i, int32_t l, int32_t c,int32_t ec) {
+	int32_t boxLastColI = 0, lastColI =0;
+	if (c == ec-1 && shouldMirrorLastCol(p, wp)) {
+		boxLastColI = getIndex(bl, bc+1, bw+2);
+		buf[boxLastColI] = image[i];
+	}else if(c == ec-1){
+		lastColI = getIndex(l, c+1, width);
+		boxLastColI = getIndex(bl, bc+1, bw+2);
+		buf[boxLastColI] = image[lastColI];
+	}
+}
+
+void get_image_part(uint8_t p, uint8_t *buf, int32_t wp, int32_t hp, int32_t bw, int32_t bh){
+	int32_t sc =  ((p - ( ((p - 1) / wp) * wp)) -1)   * bw; 
+	int32_t sl = ((p - 1) / wp) * bh;
+	int32_t ec = sc + bw;
+	int32_t el = sl + bh;
+	int32_t l = sl, bl = 1;
+	int32_t c = sc, bc = 1;
+
+	printf("Part:%d, sc:%d, sl:%d, ec:%d, el:%d \n", p, sc, sl, ec, el);
+	for(l = sl,bl = 1; l < el; l++, bl++){
+		for(c = sc, bc = 1; c < ec; c++, bc++){
+			
+			int32_t i = getIndex(l, c, width);
+			int32_t boxI = getIndex(bl, bc, bw+2); 
+			
+			treatBoxFirstLine(p, buf, wp, bl, bc, bw, i, l, c);
+			
+			treatBoxFirstCol(p, buf, wp, bl, bc, bw, i, l, c);
+			
+			buf[boxI] = image[i];
+
+			treatBoxLastLine(p, buf, wp, hp, bl, bc, bw, i, l, c, el);
+
+			treatBoxLastCol(p, buf, wp, bl, bc, bw, i, l, c, ec);
+			
+		}		
+	}
+}
+
+
+void realoc_part(uint8_t *img_result, uint8_t part_received, uint8_t *buf){
+
+}
+
+void print_matrix(uint8_t *matrix, int32_t w, int32_t h){
+	int32_t i =0;
+	int32_t l = 0;
+	int32_t c = 0;
+	for(l = 0; l < h; l++){
+		for(c = 0; c < w; c++){
+			i = getIndex(l, c , w);
+			printf("%d\t", matrix[i]);
+		}
+		printf("\n");
+	}
+}
+void master(){
+
+	uint8_t *img_result;
+	uint16_t cpu, task, size, val, n_parts, current_part, part_received, ready_parts, wp, hp;
+	uint8_t loop = 1;
+	int8_t buf[(BW+2)*(BH+2)], work_map[N_CPU];
+
+	if (hf_comm_create(hf_selfid(), 1111, 0))
+		panic(0xff);
+	
+	// init in how many parts the image will be split
+	wp = width/BW;
+	hp = height/BH;
+	n_parts = wp * hp;
+	current_part = 1;
+	ready_parts = 0;
+	init_work_map(work_map);
+
+	//img_result = (uint8_t *) malloc(height * width);
+	
+    while(loop)
+    {
+    	int next = get_free_cpu(work_map);
+    	if(next != -1 && current_part <= n_parts){
+    		// SEND WORK
+    		get_image_part(current_part, buf, wp, hp, BW, BH);
+    		print_matrix(buf, BW+2, BH+2);
+    		printf("###########\n");
+    		//val = hf_sendack(next, 2222, buf, sizeof(buf), next, 500);   
+    		current_part++;
+
+    	}else{
+    		loop = 0;
+    		/*
+    		if(ready_parts < n_parts){
+    			val = hf_recvack(&cpu, &task, buf, &size, 0);
+    			part_received = work_map[cpu];
+    			realoc_part(img_result, part_received, buf);
+    			work_map[cpu] = -1;
+    			ready_parts++;
+    		}else{
+    			loop = 0;
+    		}*/
+    	}
+    }
+
+}
+
+void slave(){
+	
 }
 
 void do_gausian(uint8_t *img, int32_t width, int32_t height){
@@ -173,6 +413,6 @@ void task(void){
 
 void app_main(void) {
 	if (hf_cpuid() == 0){
-		hf_spawn(task, 0, 0, 0, "filter", 2048);
+		hf_spawn(master, 0, 0, 0, "master", 2048);
 	}
 }
