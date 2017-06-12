@@ -333,6 +333,7 @@ void master(){
 	int32_t dest_port = 5000;
 	if (hf_comm_create(hf_selfid(), 1111, 0))
 		panic(0xff);
+
 	// init in how many parts the image will be split
 	wp = width/BW;
 	hp = height/BH;
@@ -353,8 +354,10 @@ void master(){
     		//memset(buf, 0, (BW+BORDER)*(BH+BORDER) * sizeof(uint8_t));
     		get_image_part(current_part, buf, wp, hp, BW, BH);
     		dest_port = 5000 + next;
-    		val = hf_sendack(next, dest_port, buf, sizeof(buf), next, 100);  
-    		printf("Enviou parte %d para o escravo %d, porta:%d\n", current_part, next, dest_port);
+    		val = hf_sendack(next, dest_port, buf, sizeof(buf), next+300, 500);  
+			if (val)
+				printf("hf_sendack(): error %d\n", val);    		
+    		printf("Enviou parte %d para o escravo %d, porta:%d, sizeof buf:%d\n", current_part, next, dest_port,sizeof(buf));
     		//print_matrix(buf, BW+BORDER, BH+BORDER);
     		work_map[next] = current_part;
     		current_part++;
@@ -367,6 +370,8 @@ void master(){
 					if (channel >= 0) {
 		    			//printf("Esperando matrix do escravo.\n");
 		    			val = hf_recvack(&cpu, &task, buf, &size, channel);
+		    			if (val)
+							printf("hf_recvack(): error %d\n", val);
 		    			printf("Recebeu matrix do escravo:%d\n",cpu);
 		    			//print_matrix(buf, BW+BORDER, BH+BORDER);
 		    			part_received = work_map[cpu];
@@ -374,6 +379,7 @@ void master(){
 		    			work_map[cpu] = -1;
 		    			printf("Partes:%d\n", ready_parts);
 		    			ready_parts++;
+		    			delay_ms(50);
 		    			break;
 	    			}
     			}
@@ -392,6 +398,7 @@ void slave(){
 	int32_t channel;
 	uint16_t val, src_cpu, src_port, size;
 	int8_t recv_buf[(BW+BORDER)*(BH+BORDER)];
+
 	if (hf_comm_create(hf_selfid(), port, 0)) {
 			panic(0xff);
 	}
@@ -407,6 +414,8 @@ void slave(){
 
 			//memset(recv_buf, 0, (BW+BORDER)*(BH+BORDER)*sizeof(uint8_t));
 			val = hf_recvack(&src_cpu, &src_port, recv_buf, &size, channel);
+			if (val)
+				printf("hf_recvack(): error %d\n", val);
 			//printf("Escravo %d recebeu trabalho.\n", hf_cpuid());
 			//time = _readcounter();
 
@@ -416,7 +425,9 @@ void slave(){
 			
 			//print_matrix(recv_buf, BW+BORDER, BH+BORDER);
 
-			val = hf_sendack(0, 1111, recv_buf, sizeof(recv_buf), hf_cpuid()+100, 100);
+			val = hf_sendack(0, 1111, recv_buf, sizeof(recv_buf), hf_cpuid()+100, 500);
+			if (val)
+				printf("hf_sendack(): error %d\n", val);
 			printf("Escravo %d  enviou trabalho feito.\n", hf_cpuid());
 			//time = _readcounter() - time;
 
@@ -427,8 +438,8 @@ void slave(){
 
 void app_main(void) {
 	if (hf_cpuid() == 0){
-		hf_spawn(master, 0, 0, 0, "master", 8096);
+		hf_spawn(master, 0, 0, 0, "master", 4096);
 	} else {
-		hf_spawn(slave, 0, 0, 0, "slave", 8096);
+		hf_spawn(slave, 0, 0, 0, "slave", 4096);
 	}
 }
