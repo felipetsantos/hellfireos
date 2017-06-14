@@ -327,7 +327,8 @@ void print_final_result(uint8_t *img_result){
 void master(){
 
 	uint8_t *img_result;
-	uint16_t cpu, task, size, val, n_parts, current_part, part_received, ready_parts, wp, hp;
+	uint16_t cpu, task, size, n_parts, current_part, part_received, ready_parts, wp, hp;
+	int16_t val;
 	uint8_t loop = 1;
 	int8_t buf[(BW+BORDER)*(BH+BORDER)], work_map[N_CPU];
 	int32_t dest_port = 5000;
@@ -349,38 +350,41 @@ void master(){
     	int next = get_free_cpu(work_map);
     	
     	if(next != -1 && current_part <= n_parts){
-    		//printf("Next:%d, current_part:%d, n_parts:%d\n", next, current_part, n_parts);
+    		
     		// SEND WORK
     		//memset(buf, 0, (BW+BORDER)*(BH+BORDER) * sizeof(uint8_t));
     		get_image_part(current_part, buf, wp, hp, BW, BH);
     		dest_port = 5000 + next;
-    		val = hf_sendack(next, dest_port, buf, sizeof(buf), next+300, 500);  
+    		//printf("Next:%d, dest_port:%d \n", next, dest_port);
+    		val = hf_sendack(next, dest_port, buf, sizeof(buf), next+300, 600);  
 			if (val)
 				printf("hf_sendack(): error %d\n", val);    		
-    		printf("Enviou parte %d para o escravo %d, porta:%d, sizeof buf:%d\n", current_part, next, dest_port,sizeof(buf));
+    		//printf("Enviou parte %d para o escravo %d, porta:%d, canal:%d\n", current_part, next, dest_port,next+300);
     		//print_matrix(buf, BW+BORDER, BH+BORDER);
     		work_map[next] = current_part;
     		current_part++;
 
     	}else{
+    		
     		int32_t channel = -1;
+    		int8_t received_p = 0;
     		if(ready_parts < n_parts){
-    			while(1){
+    			while(received_p < N_CPU-1 && ready_parts < n_parts){
 	    			channel = hf_recvprobe();
 					if (channel >= 0) {
 		    			//printf("Esperando matrix do escravo.\n");
 		    			val = hf_recvack(&cpu, &task, buf, &size, channel);
 		    			if (val)
 							printf("hf_recvack(): error %d\n", val);
-		    			printf("Recebeu matrix do escravo:%d\n",cpu);
+		    			//printf("Recebeu matrix do escravo:%d canal:%d\n",cpu, channel);
 		    			//print_matrix(buf, BW+BORDER, BH+BORDER);
 		    			part_received = work_map[cpu];
 		    			realoc_part(img_result, part_received, buf, wp, hp, BW, BH);
 		    			work_map[cpu] = -1;
-		    			printf("Partes:%d\n", ready_parts);
+		    			//printf("Partes:%d\n", ready_parts);
 		    			ready_parts++;
-		    			delay_ms(50);
-		    			break;
+		 				received_p++;
+		    			
 	    			}
     			}
     			
@@ -396,13 +400,14 @@ void master(){
 void slave(){
 	uint32_t port = 5000+hf_cpuid();
 	int32_t channel;
-	uint16_t val, src_cpu, src_port, size;
+	uint16_t src_cpu, src_port, size;
+	int16_t val;
 	int8_t recv_buf[(BW+BORDER)*(BH+BORDER)];
 
 	if (hf_comm_create(hf_selfid(), port, 0)) {
 			panic(0xff);
 	}
-	//printf("Inicializou escravo: %d\n", hf_cpuid());
+	printf("Inicializou escravo: %d na porta%d\n", hf_cpuid(), port);
 	
 	
 	//uint32_t time;
@@ -410,25 +415,25 @@ void slave(){
 	while (1){
 		channel = hf_recvprobe();
 		if(channel >= 0){
-			printf("Escravo %d esperando trabalho. Porta: %d\n", hf_cpuid(), port);
+			//printf("Escravo %d esperando trabalho. Porta: %d\n", hf_cpuid(), port);
 
 			//memset(recv_buf, 0, (BW+BORDER)*(BH+BORDER)*sizeof(uint8_t));
 			val = hf_recvack(&src_cpu, &src_port, recv_buf, &size, channel);
 			if (val)
 				printf("hf_recvack(): error %d\n", val);
-			//printf("Escravo %d recebeu trabalho.\n", hf_cpuid());
+			//printf("Escravo %d recebeu trabalho no canal %d.\n", hf_cpuid(), channel);
 			//time = _readcounter();
 
 			//do_gausian(recv_buf, BW+BORDER, BH+BORDER);
 			//do_sobel(recv_buf, BW+BORDER, BH+BORDER);
-
+			delay_ms(50);
 			
 			//print_matrix(recv_buf, BW+BORDER, BH+BORDER);
-
-			val = hf_sendack(0, 1111, recv_buf, sizeof(recv_buf), hf_cpuid()+100, 500);
+			//printf("Escravo %d  vai enviar trabalho feito, para porta %d no canal %d.\n", hf_cpuid(), 1111, hf_cpuid()+100);
+			val = hf_sendack(0, 1111, recv_buf, sizeof(recv_buf), hf_cpuid()+100, 100);
 			if (val)
 				printf("hf_sendack(): error %d\n", val);
-			printf("Escravo %d  enviou trabalho feito.\n", hf_cpuid());
+			//printf("Escravo %d  enviou trabalho feito.\n", hf_cpuid());
 			//time = _readcounter() - time;
 
 			//printf("done in %d clock cycles.\n\n", time);
