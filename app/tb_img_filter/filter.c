@@ -5,10 +5,13 @@
 
 #define BW 24 // largura de uma parte da imagem
 #define BH 18 // altura de uma parte da imagem
-#define BORDER 2
+//#define BW 2 // largura de uma parte da imagem
+//#define BH 3 // altura de uma parte da imagem
+#define BORDER 4
 #define N_CPU 6 // número de cpus
 
 //convert car.png -alpha set -define bmp:format=bmp3 -grayscale Rec709Luma  car.bmp
+
 
 uint8_t gausian(uint8_t buffer[5][5]){
 	int32_t sum = 0, mpixel;
@@ -28,7 +31,7 @@ uint8_t gausian(uint8_t buffer[5][5]){
 	return (uint8_t)mpixel;
 }
 
-uint32_t isqrt(uint32_t a){ 
+uint32_t isqrt(uint32_t a){
 	uint32_t i, rem = 0, root = 0, divisor = 0;
 
 	for (i = 0; i < 16; i++){
@@ -76,9 +79,9 @@ void do_gausian(uint8_t *img, int32_t width, int32_t height){
 	uint8_t image_buf[5][5];
 	
 	for(i = 0; i < height; i++){
-		if (i > 1 || i < height-1){
+		if (i > 1 || i < height-2){
 			for(j = 0; j < width; j++){
-				if (j > 1 || j < width-1){
+				if (j > 1 || j < width-2){
 					for (k = 0; k < 5;k++)
 						for(l = 0; l < 5; l++)
 							image_buf[k][l] = img[(((i + l-2) * width) + (j + k-2))];
@@ -98,8 +101,8 @@ void do_sobel(uint8_t *img, int32_t width, int32_t height){
 	
 	for(i = 0; i < height; i++){
 		if (i > 0 || i < height-1){
-			for(j = 0; j < width; j++){
-				if (j > 0 || j < width){
+			for(j = 0; j < width-1; j++){
+				if (j > 0 || j < width-1){
 					for (k = 0; k < 3;k++)
 						for(l = 0; l < 3; l++)
 							image_buf[k][l] = img[(((i + l-1) * width) + (j + k-1))];
@@ -112,6 +115,7 @@ void do_sobel(uint8_t *img, int32_t width, int32_t height){
 		}
 	}
 }
+
 
 
 int get_free_cpu(int8_t *work_map){
@@ -256,27 +260,108 @@ void get_image_part(uint8_t p, uint8_t *buf, int32_t wp, int32_t hp, int32_t bw,
 	int32_t sl = ((p - 1) / wp) * bh;
 	int32_t ec = sc + bw;
 	int32_t el = sl + bh;
-	int32_t l = sl, bl = 1;
-	int32_t c = sc, bc = 1;
+	int32_t l = sl, bl = 2;
+	int32_t c = sc, bc = 2;
 
 	//printf("Part:%d, sc:%d, sl:%d, ec:%d, el:%d \n", p, sc, sl, ec, el);
-	for(l = sl,bl = 1; l < el; l++, bl++){
-		for(c = sc, bc = 1; c < ec; c++, bc++){
+	for(l = sl,bl = 2; l < el; l++, bl++){
+		for(c = sc, bc = 2; c < ec; c++, bc++){
 			
 			int32_t i = getIndex(l, c, width);
 			int32_t boxI = getIndex(bl, bc, bw+BORDER); 
 			
-			treatBoxFirstLine(p, buf, wp, bl, bc, bw, i, l, c);
+			//treatBoxFirstLine(p, buf, wp, bl, bc, bw, i, l, c);
 			
-			treatBoxFirstCol(p, buf, wp, bl, bc, bw, i, l, c);
-			
+			//treatBoxFirstCol(p, buf, wp, bl, bc, bw, i, l, c);
 			buf[boxI] = image[i];
 
-			treatBoxLastLine(p, buf, wp, hp, bl, bc, bw, i, l, c, el);
+			//treatBoxLastLine(p, buf, wp, hp, bl, bc, bw, i, l, c, el);
 
-			treatBoxLastCol(p, buf, wp, bl, bc, bw, i, l, c, ec);
+			//treatBoxLastCol(p, buf, wp, bl, bc, bw, i, l, c, ec);
 			
 		}		
+	}
+
+	fillTopLines(buf, bw, bh, sl, sc, el, ec);
+	//fillLeftCol(p, buf, bw, bh, sl, sc, el, ec);
+	//fillBottomLine(p, buf, bw, bh, sl, sc, el, ec);
+	//fillRightCol(p, buf, bw, bh, sl, sc, el, ec);
+}
+
+void fillTopLines(uint8_t *buf, int32_t bw, int32_t bh, int32_t sl, int32_t sc, int32_t el, int32_t ec){
+	int8_t l,c, ic;
+	uint8_t bwB = bw+BORDER;
+	uint8_t bhB = bw+BORDER;
+	if(sl == 0){
+		int8_t boxI = getIndex(2, 2, bwB);
+		int32_t cornerLeft = buf[getIndex(2, 2, bwB)];
+		int32_t cornerRight = buf[getIndex(2, bwB-3, bwB)];
+		//printf("Passou aqui cornerLeft:%d, cornerRight:%d, boxI %d\n", cornerLeft, cornerRight, boxI);
+		buf[getIndex(0, 0, bwB)] = cornerLeft;
+		buf[getIndex(0, 1, bwB)] = cornerLeft;
+		buf[getIndex(1, 0, bwB)] = cornerLeft;
+		buf[getIndex(1, 1, bwB)] = cornerLeft;
+
+		buf[getIndex(0, bwB-1, bwB)] = cornerRight;
+		buf[getIndex(0, bwB-2, bwB)] = cornerRight;
+		buf[getIndex(1, bwB-1, bwB)] = cornerRight;
+		buf[getIndex(1, bwB-2, bwB)] = cornerRight;
+		for (c = 2;c < bwB-2; c++) {
+			buf[getIndex(0,c, bwB)] = buf[getIndex(2,c, bwB)];
+			buf[getIndex(1,c, bwB)] = buf[getIndex(2,c, bwB)];
+		}
+		
+	}else if(sl-1 == 0){
+		uint8_t cornerLeft = buf[getIndex(1, 2, bwB)];
+		buf[getIndex(0, 0, bwB)] = cornerLeft;
+		buf[getIndex(0, 1, bwB)] = cornerLeft;
+		uint8_t cornerRight = buf[getIndex(1, bwB-3, bwB)];
+		buf[getIndex(0, bwB-1, bwB)] = cornerRight;
+		buf[getIndex(0, bwB-2, bwB)] = cornerRight;
+		for (c = 2, ic = sc;c < bwB-2; c++, ic++) {
+			buf[getIndex(0,c, bwB)] = buf[getIndex(1,c, bwB)];
+			buf[getIndex(1,c, bwB)] = image[getIndex(sl-1, ic, width)];
+		}
+	}else{
+		 
+		if(sc == 0){
+			buf[getIndex(0, 0, bwB)] = image[getIndex(sl-2, sc, width)];
+			buf[getIndex(0, 1, bwB)] = image[getIndex(sl-2, sc, width)];
+			buf[getIndex(1, 0, bwB)] = image[getIndex(sl-1, sc, width)];
+			buf[getIndex(1, 1, bwB)] = image[getIndex(sl-1, sc, width)];
+		}else if(sc-1 == 0){
+			buf[getIndex(0, 0, bwB)] = image[getIndex(sl-2, sc, width)];
+			buf[getIndex(0, 1, bwB)] = image[getIndex(sl-2, sc-1, width)];
+			buf[getIndex(1, 0, bwB)] = image[getIndex(sl-1, sc, width)];
+			buf[getIndex(1, 1, bwB)] = image[getIndex(sl-1, sc-1, width)];
+		}else{
+			buf[getIndex(0, 0, bwB)] = image[getIndex(sl-2, sc-2, width)];
+			buf[getIndex(0, 1, bwB)] = image[getIndex(sl-2, sc-1, width)];
+			buf[getIndex(1, 0, bwB)] = image[getIndex(sl-1, sc-2, width)];
+			buf[getIndex(1, 1, bwB)] = image[getIndex(sl-1, sc-1, width)];
+		}
+
+		if(sc+bw == width){
+			buf[getIndex(0, bwB-1, bwB)] = image[getIndex(sl-2, ec-1, width)];
+			buf[getIndex(0, bwB-2, bwB)] = image[getIndex(sl-2, ec-1, width)];
+			buf[getIndex(1, bwB-1, bwB)] = image[getIndex(sl-1, ec-1, width)];
+			buf[getIndex(1, bwB-2, bwB)] = image[getIndex(sl-1, ec-1, width)];
+		}else if(sc+bw+1 == width){
+			buf[getIndex(0, bwB-1, bwB)] = image[getIndex(sl-2, ec-1, width)];
+			buf[getIndex(0, bwB-2, bwB)] = image[getIndex(sl-2, ec, width)];
+			buf[getIndex(1, bwB-1, bwB)] = image[getIndex(sl-1, ec-1, width)];
+			buf[getIndex(1, bwB-2, bwB)] = image[getIndex(sl-1, ec, width)];
+		}else{
+			buf[getIndex(0, bwB-1, bwB)] = image[getIndex(sl-2, sc+bw+1, width)];
+			buf[getIndex(0, bwB-2, bwB)] = image[getIndex(sl-2, sc+bw, width)];
+			buf[getIndex(1, bwB-1, bwB)] = image[getIndex(sl-1, sc+bw+1, width)];
+			buf[getIndex(1, bwB-2, bwB)] = image[getIndex(sl-1, sc+bw, width)];
+		}
+
+		for (c = 2,ic = sc;c < bwB-2; c++, ic++) {
+			buf[getIndex(0,c, bwB)] = image[getIndex(sl-2, ic, width)];
+			buf[getIndex(1,c, bwB)] = image[getIndex(sl-1, ic, width)];
+		}
 	}
 }
 
@@ -286,10 +371,10 @@ void realoc_part(uint8_t *img_result, uint8_t p, uint8_t *buf, int32_t wp, int32
 	int32_t sl = ((p - 1) / wp) * bh;
 	int32_t ec = sc + bw;
 	int32_t el = sl + bh;
-	int32_t l = sl, bl = 1;
-	int32_t c = sc, bc = 1;
-	for(l = sl,bl = 1; l < el; l++, bl++){
-		for(c = sc, bc = 1; c < ec; c++, bc++){
+	int32_t l = sl, bl = 2;
+	int32_t c = sc, bc = 2; 
+	for(l = sl,bl = 2; l < el; l++, bl++){
+		for(c = sc, bc = 2; c < ec; c++, bc++){
 			int32_t i = getIndex(l, c, width);
 			int32_t boxI = getIndex(bl, bc, bw+BORDER);
 			img_result[i] = buf[boxI];
@@ -310,8 +395,10 @@ void print_matrix(uint8_t *matrix, int32_t w, int32_t h){
 	}
 }
 
+
+
 void print_final_result(uint8_t *img_result){
-		uint8_t i =0, j=0, k = 0;
+		int32_t i =0, j=0, k = 0;
 		printf("\n\nint32_t width = %d, height = %d;\n", width, height);
 		printf("uint8_t image[] = {\n");
 		for (i = 0; i < height; i++){
@@ -352,7 +439,7 @@ void master(){
     	if(next != -1 && current_part <= n_parts){
     		
     		// SEND WORK
-    		//memset(buf, 0, (BW+BORDER)*(BH+BORDER) * sizeof(uint8_t));
+    		memset(buf, 0, (BW+BORDER)*(BH+BORDER) * sizeof(uint8_t));
     		get_image_part(current_part, buf, wp, hp, BW, BH);
     		dest_port = 5000 + next;
     		//printf("Next:%d, dest_port:%d \n", next, dest_port);
@@ -361,6 +448,7 @@ void master(){
 				printf("hf_sendack(): error %d\n", val);    		
     		//printf("Enviou parte %d para o escravo %d, porta:%d, canal:%d\n", current_part, next, dest_port,next+300);
     		//print_matrix(buf, BW+BORDER, BH+BORDER);
+    		//printf("######\n"); 
     		work_map[next] = current_part;
     		current_part++;
 
