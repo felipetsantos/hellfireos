@@ -171,88 +171,6 @@ int shouldMirrorLastCol(uint8_t p, int32_t wp){
 	}
 }
 
-void treatBoxFirstLine(uint8_t p, uint8_t *buf, int32_t wp, int32_t bl, int32_t bc, int32_t bw, int32_t i, int32_t l, int32_t c){
-	int32_t boxPrevLineI = 0, prevLineI = 0;
-	if(bl-1 == 0 && shouldMirrorFirstLine(p, wp)){
-		if ((bc-1) == 0) {
-			buf[getIndex(bl-1, bc-1, bw+BORDER)] = image[i];
-		}else if (bc == bw && l == 0) {
-			buf[getIndex(bl-1, bc+1, bw+BORDER)] = image[i];
-		}
-		boxPrevLineI = getIndex(bl-1, bc, bw+BORDER);
-		buf[boxPrevLineI] = image[i];
-	}else if(bl-1 == 0){
-		boxPrevLineI = getIndex(bl-1, bc, bw+BORDER);
-		prevLineI = getIndex(l-1, c, width);
-		buf[boxPrevLineI] = image[prevLineI];
-		if ((bc-1) == 0 && c != 0) {
-			buf[getIndex(bl-1, bc-1, bw+BORDER)] = image[getIndex(l-1, c-1, width)];
-		}else if ((bc-1) == 0 && c == 0) {
-			buf[getIndex(bl-1, bc-1, bw+BORDER)] = image[i];
-		}else if (bc == bw && l != 0 && p%wp != 0) {
-			buf[getIndex(bl-1, bc+1, bw+BORDER)] = image[getIndex(l-1, c+1, width)];
-		}else if (bc == bw && l != 0 && p%wp == 0){
-			buf[getIndex(bl-1, bc+1, bw+BORDER)] = image[i];
-		}
-
-	}
-}
-
-void treatBoxFirstCol(uint8_t p, uint8_t *buf, int32_t wp, int32_t bl,int32_t bc, int32_t bw, int32_t i, int32_t l, int32_t c){
-	int32_t boxPrevColI = 0, prevColI =0;
-	if(bc-1 == 0 && shouldMirrorFirstCol(p, wp)) {
-    	boxPrevColI = getIndex(bl, bc-1, bw+BORDER);
-    	buf[boxPrevColI] = image[i];
-	}else if(bc-1 == 0){
-		prevColI = getIndex(l, c-1, width);
-		boxPrevColI = getIndex(bl, bc-1, bw+BORDER);
-		buf[boxPrevColI] = image[prevColI];
-	}
-}
-
-void treatBoxLastLine(uint8_t p, uint8_t *buf, int32_t wp, int32_t hp, int32_t bl,int32_t bc, int32_t bw, int32_t i, int32_t l, int32_t c, int32_t el){
-	int32_t boxLastLineI = 0, lastLineI = 0;
-	if (l == el-1 && shouldMirrorLastLine(p, wp, hp)) {
-		boxLastLineI = getIndex(bl+1, bc, bw+BORDER);
-		buf[boxLastLineI] = image[i];
-
-		if ((bc-1) == 0) {
-			buf[getIndex(bl+1, bc-1, bw+BORDER)] = image[i];
-		}else if (bc == bw) {
-			buf[getIndex(bl+1, bc+1, bw+BORDER)] = image[i];
-		}
-
-	}else if(l == el-1){
-
-		lastLineI = getIndex(l+1, c, width);
-		boxLastLineI = getIndex(bl+1, bc, bw+BORDER);
-		buf[boxLastLineI] = image[lastLineI];
-		if ((bc-1) == 0 && c != 0) {
-			buf[getIndex(bl+1, bc-1, bw+BORDER)] = image[getIndex(l+1, c-1, width)];
-		}else if ((bc-1) == 0 && c == 0) {
-			buf[getIndex(bl+1, bc-1, bw+BORDER)] = image[i];
-		}else if (bc == bw && p%wp != 0) {
-			buf[getIndex(bl+1, bc+1, bw+BORDER)] = image[getIndex(l+1, c+1, width)];
-		}else if (bc == bw && p%wp == 0){
-			buf[getIndex(bl+1, bc+1, bw+BORDER)] = image[i];
-		}
-
-
-	}	
-}
-
-
-void treatBoxLastCol(uint8_t p, uint8_t *buf, int32_t wp, int32_t bl,int32_t bc, int32_t bw, int32_t i, int32_t l, int32_t c,int32_t ec) {
-	int32_t boxLastColI = 0, lastColI =0;
-	if (c == ec-1 && shouldMirrorLastCol(p, wp)) {
-		boxLastColI = getIndex(bl, bc+1, bw+BORDER);
-		buf[boxLastColI] = image[i];
-	}else if(c == ec-1){
-		lastColI = getIndex(l, c+1, width);
-		boxLastColI = getIndex(bl, bc+1, bw+BORDER);
-		buf[boxLastColI] = image[lastColI];
-	}
-}
 
 void get_image_part(uint8_t p, uint8_t *buf, int32_t wp, int32_t hp, int32_t bw, int32_t bh){
 	int32_t sc =  ((p - ( ((p - 1) / wp) * wp)) -1)   * bw; 
@@ -269,15 +187,7 @@ void get_image_part(uint8_t p, uint8_t *buf, int32_t wp, int32_t hp, int32_t bw,
 			int32_t i = getIndex(l, c, width);
 			int32_t boxI = getIndex(bl, bc, bw+BORDER); 
 			
-			//treatBoxFirstLine(p, buf, wp, bl, bc, bw, i, l, c);
-			
-			//treatBoxFirstCol(p, buf, wp, bl, bc, bw, i, l, c);
-			buf[boxI] = image[i];
-
-			//treatBoxLastLine(p, buf, wp, hp, bl, bc, bw, i, l, c, el);
-
-			//treatBoxLastCol(p, buf, wp, bl, bc, bw, i, l, c, ec);
-			
+			buf[boxI] = image[i];	
 		}		
 	}
 
@@ -335,7 +245,7 @@ void fillBottomLines(uint8_t *buf, int32_t bw, int32_t bh, int32_t sl, int32_t s
 	
 	// Last line of matrix
 	if(el == height){
-		int8_t boxI = getIndex(bhB - 3, 2, bwB);
+		//int8_t boxI = getIndex(bhB - 3, 2, bwB);
 		int32_t cornerLeft = buf[getIndex(bhB - 3, 2, bwB)];
 		int32_t cornerRight = buf[getIndex(bhB - 3, bwB-3, bwB)];
 		//printf("Passou aqui cornerLeft:%d, cornerRight:%d, boxI %d\n", cornerLeft, cornerRight, boxI);
@@ -349,8 +259,8 @@ void fillBottomLines(uint8_t *buf, int32_t bw, int32_t bh, int32_t sl, int32_t s
 		buf[getIndex(bhB - 2, bwB-1, bwB)] = cornerRight;
 		buf[getIndex(bhB - 2, bwB-2, bwB)] = cornerRight;
 		for (c = 2;c < bwB-2; c++) {
-			buf[getIndex(0,c, bwB)] = buf[getIndex(bhB - 3,c, bwB)];
-			buf[getIndex(1,c, bwB)] = buf[getIndex(bhB - 3,c, bwB)];
+			buf[getIndex(bhB - 1,c, bwB)] = buf[getIndex(bhB - 4,c, bwB)];
+			buf[getIndex(bhB - 2,c, bwB)] = buf[getIndex(bhB - 3,c, bwB)];
 		}
 		
 	}else{
@@ -474,7 +384,7 @@ void realoc_part(uint8_t *img_result, uint8_t p, uint8_t *buf, int32_t wp, int32
 	for(l = sl,bl = 2; l < el; l++, bl++){
 		for(c = sc, bc = 2; c < ec; c++, bc++){
 			int32_t i = getIndex(l, c, width);
-			int32_t boxI = getIndex(bl, bc, bw+BORDER);
+			int32_t boxI = getIndex(bl, bc, bw + BORDER);
 			img_result[i] = buf[boxI];
 		}		
 	}
@@ -530,9 +440,8 @@ void master(){
 	current_part = 1;
 	ready_parts = 0;
 	init_work_map(work_map);
+	//print_matrix(image, width, height );
 	img_result = (uint8_t *) malloc(height * width);
-	
-	print_matrix(image, width, height );
 
     while(loop)
     {
@@ -548,9 +457,9 @@ void master(){
     		val = hf_sendack(next, dest_port, buf, sizeof(buf), next+300, 600);  
 			if (val)
 				printf("hf_sendack(): error %d\n", val);    		
-    		printf("Enviou parte %d para o escravo %d, porta:%d, canal:%d\n", current_part, next, dest_port,next+300);
-    		print_matrix(buf, BW+BORDER, BH+BORDER);
-    		printf("######\n\n\n"); 
+    	//	printf("Enviou parte %d para o escravo %d, porta:%d, canal:%d\n", current_part, next, dest_port,next+300);
+    		//print_matrix(buf, BW+BORDER, BH+BORDER);
+    		//printf("######\n\n\n"); 
     		work_map[next] = current_part;
     		current_part++;
 
@@ -566,15 +475,14 @@ void master(){
 		    			val = hf_recvack(&cpu, &task, buf, &size, channel);
 		    			if (val)
 							printf("hf_recvack(): error %d\n", val);
-		    			//printf("Recebeu matrix do escravo:%d canal:%d\n",cpu, channel);
-		    			//print_matrix(buf, BW+BORDER, BH+BORDER);
+		    			printf("Recebeu matrix do escravo:%d canal:%d\n",cpu, channel);
+		    			print_matrix(buf, BW+BORDER, BH+BORDER);
 		    			part_received = work_map[cpu];
 		    			realoc_part(img_result, part_received, buf, wp, hp, BW, BH);
 		    			work_map[cpu] = -1;
 		    			//printf("Partes:%d\n", ready_parts);
 		    			ready_parts++;
-		 				received_p++;
-		    			
+		 					received_p++;		
 	    			}
     			}
     			
@@ -583,7 +491,7 @@ void master(){
     		}
     	}
     }
-    //print_final_result(img_result);
+    print_final_result(img_result);
     free(img_result);
 }
 
@@ -614,7 +522,7 @@ void slave(){
 			//printf("Escravo %d recebeu trabalho no canal %d.\n", hf_cpuid(), channel);
 			//time = _readcounter();
 
-			//do_gausian(recv_buf, BW+BORDER, BH+BORDER);
+			//do_gausian(recv_buf, BW + BORDER, BH + BORDER);
 			//do_sobel(recv_buf, BW+BORDER, BH+BORDER);
 			delay_ms(50);
 			
