@@ -117,7 +117,6 @@ void do_sobel(uint8_t *img, int32_t width, int32_t height){
 }
 
 
-
 int get_free_cpu(int8_t *work_map){
 	uint8_t i=0;
 	for(i=1; i<N_CPU; i++){
@@ -283,15 +282,115 @@ void get_image_part(uint8_t p, uint8_t *buf, int32_t wp, int32_t hp, int32_t bw,
 	}
 
 	fillTopLines(buf, bw, bh, sl, sc, el, ec);
-	//fillLeftCol(p, buf, bw, bh, sl, sc, el, ec);
-	//fillBottomLine(p, buf, bw, bh, sl, sc, el, ec);
-	//fillRightCol(p, buf, bw, bh, sl, sc, el, ec);
+	fillLeftCols(buf, bw, bh, sl, sc, el, ec);
+	fillBottomLines(buf, bw, bh, sl, sc, el, ec);
+	fillRightCols(buf, bw, bh, sl, sc, el, ec);
+}
+
+void fillLeftCols(uint8_t *buf, int32_t bw, int32_t bh, int32_t sl, int32_t sc, int32_t el, int32_t ec){
+	int8_t l,c, il;
+	uint8_t bwB = bw + BORDER;
+	uint8_t bhB = bh + BORDER;
+	
+	// Last line of matrix
+	if(sc == 0){
+		for (l = 2,il = sl;l < bhB-2; l++, il++) {
+			buf[getIndex(l, 0, bwB)] = buf[getIndex(l, 3, bwB)];
+			buf[getIndex(l, 1, bwB)] = buf[getIndex(l, 2, bwB)];
+		}
+	}else {
+			for (l = 2,il = sl;l < bhB-2; l++, il++) {
+				buf[getIndex(l, 0, bwB)] = image[getIndex(il, sc - 2, width)];
+				buf[getIndex(l, 1, bwB)] = image[getIndex(il, sc - 1, width)];
+			}
+	}
+}
+
+void fillRightCols(uint8_t *buf, int32_t bw, int32_t bh, int32_t sl, int32_t sc, int32_t el, int32_t ec){
+	int8_t l,c, il;
+	uint8_t bwB = bw + BORDER;
+	uint8_t bhB = bh + BORDER;
+	
+	// Last line of matrix
+	if(ec == width){
+		for (l = 2,il = sl;l < bhB-2; l++, il++) {
+			buf[getIndex(l, bwB - 1, bwB)] = buf[getIndex(l, bwB - 4, bwB)];
+			buf[getIndex(l, bwB - 2, bwB)] = buf[getIndex(l, bwB - 3, bwB)];
+		}
+	}else {
+			for (l = 2,il = sl;l < bhB-2; l++, il++) {
+				buf[getIndex(l, bwB - 1, bwB)] = image[getIndex(il, ec + 1, width)];
+				buf[getIndex(l, bwB - 2, bwB)] = image[getIndex(il, ec, width)];
+			}
+	}
+}
+
+
+
+
+void fillBottomLines(uint8_t *buf, int32_t bw, int32_t bh, int32_t sl, int32_t sc, int32_t el, int32_t ec){
+	int8_t l,c, ic;
+	uint8_t bwB = bw + BORDER;
+	uint8_t bhB = bh + BORDER;
+	
+	// Last line of matrix
+	if(el == height){
+		int8_t boxI = getIndex(bhB - 3, 2, bwB);
+		int32_t cornerLeft = buf[getIndex(bhB - 3, 2, bwB)];
+		int32_t cornerRight = buf[getIndex(bhB - 3, bwB-3, bwB)];
+		//printf("Passou aqui cornerLeft:%d, cornerRight:%d, boxI %d\n", cornerLeft, cornerRight, boxI);
+		buf[getIndex(bhB - 1, 0, bwB)] = cornerLeft;
+		buf[getIndex(bhB - 1, 1, bwB)] = cornerLeft;
+		buf[getIndex(bhB - 2, 0, bwB)] = cornerLeft;
+		buf[getIndex(bhB - 2, 1, bwB)] = cornerLeft;
+
+		buf[getIndex(bhB - 1, bwB-1, bwB)] = cornerRight;
+		buf[getIndex(bhB - 1, bwB-2, bwB)] = cornerRight;
+		buf[getIndex(bhB - 2, bwB-1, bwB)] = cornerRight;
+		buf[getIndex(bhB - 2, bwB-2, bwB)] = cornerRight;
+		for (c = 2;c < bwB-2; c++) {
+			buf[getIndex(0,c, bwB)] = buf[getIndex(bhB - 3,c, bwB)];
+			buf[getIndex(1,c, bwB)] = buf[getIndex(bhB - 3,c, bwB)];
+		}
+		
+	}else{
+		 
+		if(sc == 0){
+			buf[getIndex(bhB - 1, 0, bwB)] = image[getIndex(el - 1, sc, width)];
+			buf[getIndex(bhB - 1, 1, bwB)] = image[getIndex(el - 1, sc, width)];
+			buf[getIndex(bhB - 2, 0, bwB)] = image[getIndex(el - 1, sc, width)];
+			buf[getIndex(bhB - 2, 1, bwB)] = image[getIndex(el - 1, sc, width)];
+		}else{
+			buf[getIndex(bhB - 1, 0, bwB)] = image[getIndex(el + 1, sc-2, width)];
+			buf[getIndex(bhB - 1, 1, bwB)] = image[getIndex(el + 1, sc-1, width)];
+			buf[getIndex(bhB - 2, 0, bwB)] = image[getIndex(el, sc-2, width)];
+			buf[getIndex(bhB - 2, 1, bwB)] = image[getIndex(el, sc-1, width)];
+		}
+
+		if(sc + bw == width){
+			buf[getIndex(bhB - 1, bwB - 1, bwB)] = image[getIndex(el + 1, ec - 1, width)];
+			buf[getIndex(bhB - 1, bwB - 2, bwB)] = image[getIndex(el + 1, ec - 1, width)];
+			buf[getIndex(bhB - 2, bwB - 1, bwB)] = image[getIndex(el, ec - 1, width)];
+			buf[getIndex(bhB - 2, bwB - 2, bwB)] = image[getIndex(el, ec - 1, width)];
+		}else{
+			buf[getIndex(bhB - 1, bwB - 1, bwB)] = image[getIndex(el + 1, sc + bw + 1, width)];
+			buf[getIndex(bhB - 1, bwB - 2, bwB)] = image[getIndex(el + 1, sc + bw, width)];
+			buf[getIndex(bhB - 2, bwB - 1, bwB)] = image[getIndex(el + 0, sc + bw + 1, width)];
+			buf[getIndex(bhB - 2, bwB - 2, bwB)] = image[getIndex(el + 0, sc + bw, width)];
+		}
+
+		for (c = 2,ic = sc;c < bwB-2; c++, ic++) {
+			buf[getIndex(bhB - 1,c, bwB)] = image[getIndex(el + 1, ic, width)];
+			buf[getIndex(bhB - 2,c, bwB)] = image[getIndex(el, ic, width)];
+		}
+	}
 }
 
 void fillTopLines(uint8_t *buf, int32_t bw, int32_t bh, int32_t sl, int32_t sc, int32_t el, int32_t ec){
 	int8_t l,c, ic;
-	uint8_t bwB = bw+BORDER;
-	uint8_t bhB = bw+BORDER;
+	uint8_t bwB = bw + BORDER;
+	uint8_t bhB = bh + BORDER;
+	
 	if(sl == 0){
 		int8_t boxI = getIndex(2, 2, bwB);
 		int32_t cornerLeft = buf[getIndex(2, 2, bwB)];
@@ -365,7 +464,6 @@ void fillTopLines(uint8_t *buf, int32_t bw, int32_t bh, int32_t sl, int32_t sc, 
 	}
 }
 
-
 void realoc_part(uint8_t *img_result, uint8_t p, uint8_t *buf, int32_t wp, int32_t hp, int32_t bw, int32_t bh){
 	int32_t sc =  ((p - ( ((p - 1) / wp) * wp)) -1)   * bw; 
 	int32_t sl = ((p - 1) / wp) * bh;
@@ -423,15 +521,19 @@ void master(){
 		panic(0xff);
 
 	// init in how many parts the image will be split
-	wp = width/BW;
-	hp = height/BH;
+	wp = width / BW;
+	hp = height / BH;
 	n_parts = wp * hp;
+
 	printf("Partes:%d\n", n_parts);
+
 	current_part = 1;
 	ready_parts = 0;
 	init_work_map(work_map);
 	img_result = (uint8_t *) malloc(height * width);
 	
+	print_matrix(image, width, height );
+
     while(loop)
     {
     	int next = get_free_cpu(work_map);
@@ -446,9 +548,9 @@ void master(){
     		val = hf_sendack(next, dest_port, buf, sizeof(buf), next+300, 600);  
 			if (val)
 				printf("hf_sendack(): error %d\n", val);    		
-    		//printf("Enviou parte %d para o escravo %d, porta:%d, canal:%d\n", current_part, next, dest_port,next+300);
-    		//print_matrix(buf, BW+BORDER, BH+BORDER);
-    		//printf("######\n"); 
+    		printf("Enviou parte %d para o escravo %d, porta:%d, canal:%d\n", current_part, next, dest_port,next+300);
+    		print_matrix(buf, BW+BORDER, BH+BORDER);
+    		printf("######\n\n\n"); 
     		work_map[next] = current_part;
     		current_part++;
 
@@ -481,7 +583,7 @@ void master(){
     		}
     	}
     }
-    print_final_result(img_result);
+    //print_final_result(img_result);
     free(img_result);
 }
 
