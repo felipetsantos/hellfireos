@@ -4,13 +4,8 @@
 #include <math.h>
 #include "gauss_sobel.c"
 
-//#define BW 24 // largura de uma parte da imagem
-//#define BH 18 // altura de uma parte da imagem
-
-#define BW 10
-#define BH 10
-//#define BW 2 // largura de uma parte da imagem
-//#define BH 3 // altura de uma parte da imagem
+#define BW 32
+#define BH 32
 #define BORDER 4
 #define N_CPU 6 // número de cpus
 
@@ -332,7 +327,6 @@ void master(){
     	if(next != -1 && current_part <= n_parts){
     		
     		// SEND WORK
-    		memset(buf, 0, (BW+BORDER)*(BH+BORDER) * sizeof(uint8_t));
     		get_image_part(current_part, buf, wp, hp, BW, BH);
     		dest_port = 5000 + next;
     		val = hf_sendack(next, dest_port, buf, sizeof(buf), next+300, 600);  
@@ -395,7 +389,6 @@ void slave(){
 
 			do_gausian(recv_buf, BW + BORDER, BH + BORDER);
 			do_sobel(recv_buf, BW+BORDER, BH+BORDER);
-			delay_ms(50);
 			
 			val = hf_sendack(0, 1111, recv_buf, sizeof(recv_buf), hf_cpuid()+100, 100);
 			if (val)

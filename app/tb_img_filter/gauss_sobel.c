@@ -32,45 +32,24 @@ uint32_t isqrt(uint32_t a){
 	return root;
 }
 
-int32_t convolution(uint8_t buffer[3][3],int16_t kernel[3][3]){
-	int32_t g;
-	g = ((int32_t)buffer[2][2] * (int32_t)kernel[0][0])
-		   +
-		   ((int32_t)buffer[2][1] * (int32_t)kernel[0][1])
-		   +
-		   ((int32_t)buffer[2][0] * (int32_t)kernel[0][2]);
-	
-	g += ((int32_t)buffer[1][2] * (int32_t)kernel[1][0])
-		   +
-		   ((int32_t)buffer[1][1] * (int32_t)kernel[1][1])
-		   +
-		   ((int32_t)buffer[1][0] * (int32_t)kernel[1][2]);
-
-	g += ((int32_t)buffer[0][2] * (int32_t)kernel[2][0])
-		   +
-		   ((int32_t)buffer[0][1] * (int32_t)kernel[2][1])
-		   +
-		   ((int32_t)buffer[0][0] * (int32_t)kernel[2][2]);
-	return g;
-}
-
 uint8_t sobel(uint8_t buffer[3][3]){
 	int32_t sum = 0, gx = 0, gy = 0;
 	uint8_t i, j;
 
-	int16_t kernelx[3][3] =	{	{1, 0, -1},
-					{2, 0, -2},
-					{1, 0, -1},
+	int16_t kernelx[3][3] =	{	{-1, 0, 1},
+					{-2, 0, 2},
+					{-1, 0, 1},
 				};
-	int16_t kernely[3][3] =	{	{1, 2, 1},
+	int16_t kernely[3][3] =	{	{-1, -2, -1},
 					{0, 0, 0},
-					{-1, -2, -1},
+					{1, 2, 1},
 				};
-
-	gx = convolution(buffer, kernelx);
-	gy = convolution(buffer, kernely);
-
-	//gy += ((int32_t)buffer[i][j] * (int32_t)kernely[i][j]);
+	for (i = 0; i < 3; i++){
+		for (j = 0; j < 3; j++){
+			gx += ((int32_t)buffer[i][j] * (int32_t)kernelx[i][j]);
+			gy += ((int32_t)buffer[i][j] * (int32_t)kernely[i][j]);
+		}
+	}
 	
 	sum = isqrt(gy * gy + gx * gx);
 
@@ -106,11 +85,11 @@ void do_sobel(uint8_t *img, int32_t width, int32_t height){
 	uint8_t *cp_img;
 	cp_img = (uint8_t *) malloc(height * width);
 	memcpy(cp_img,img,height * width);
-	for(i = 1; i < height-1; i++){
-		for(j = 1; j < width-1; j++){
+	for(i = 2; i < height-2; i++){
+		for(j = 2; j < width-2; j++){
 				for (k = 0; k < 3;k++){
 					for(l = 0; l < 3; l++){
-						image_buf[k][l] = cp_img[getIndex((i-1)+k,(j-1)+l,width)];
+						image_buf[k][l] = cp_img[(((i + l-1) * width) + (j + k-1))];
 					}
 					
 				}
