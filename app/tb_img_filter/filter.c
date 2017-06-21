@@ -2,120 +2,19 @@
 #include <noc.h>
 #include "image.h"
 #include <math.h>
+#include "gauss_sobel.c"
 
-#define BW 24 // largura de uma parte da imagem
-#define BH 18 // altura de uma parte da imagem
+//#define BW 24 // largura de uma parte da imagem
+//#define BH 18 // altura de uma parte da imagem
+
+#define BW 10
+#define BH 10
 //#define BW 2 // largura de uma parte da imagem
 //#define BH 3 // altura de uma parte da imagem
 #define BORDER 4
 #define N_CPU 6 // número de cpus
 
 //convert car.png -alpha set -define bmp:format=bmp3 -grayscale Rec709Luma  car.bmp
-
-
-uint8_t gausian(uint8_t buffer[5][5]){
-	int32_t sum = 0, mpixel;
-	uint8_t i, j;
-
-	int16_t kernel[5][5] =	{	{2, 4, 5, 4, 2},
-					{4, 9, 12, 9, 4},
-					{5, 12, 15, 12, 5},
-					{4, 9, 12, 9, 4},
-					{2, 4, 5, 4, 2}
-				};
-	for (i = 0; i < 5; i++)
-		for (j = 0; j < 5; j++)
-			sum += ((int32_t)buffer[i][j] * (int32_t)kernel[i][j]);
-	mpixel = (int32_t)(sum / 159);
-
-	return (uint8_t)mpixel;
-}
-
-uint32_t isqrt(uint32_t a){
-	uint32_t i, rem = 0, root = 0, divisor = 0;
-
-	for (i = 0; i < 16; i++){
-		root <<= 1;
-		rem = ((rem << 2) + (a >> 30));
-		a <<= 2;
-		divisor = (root << 1) + 1;
-		if (divisor <= rem){
-			rem -= divisor;
-			root++;
-		}
-	}
-	return root;
-}
-
-uint8_t sobel(uint8_t buffer[3][3]){
-	int32_t sum = 0, gx = 0, gy = 0;
-	uint8_t i, j;
-
-	int16_t kernelx[3][3] =	{	{-1, 0, 1},
-					{-2, 0, 2},
-					{-1, 0, 1},
-				};
-	int16_t kernely[3][3] =	{	{-1, -2, -1},
-					{0, 0, 0},
-					{1, 2, 1},
-				};
-	for (i = 0; i < 3; i++){
-		for (j = 0; j < 3; j++){
-			gx += ((int32_t)buffer[i][j] * (int32_t)kernelx[i][j]);
-			gy += ((int32_t)buffer[i][j] * (int32_t)kernely[i][j]);
-		}
-	}
-	
-	sum = isqrt(gy * gy + gx * gx);
-
-	if (sum > 255) sum = 255;
-	if (sum < 0) sum = 0;
-
-	return (uint8_t)sum;
-}
-
-void do_gausian(uint8_t *img, int32_t width, int32_t height){
-	int32_t i, j, k, l;
-	uint8_t image_buf[5][5];
-	
-	for(i = 0; i < height; i++){
-		if (i > 1 && i < height-2){
-			for(j = 0; j < width; j++){
-				if (j > 1 && j < width-2){
-					for (k = 0; k < 5;k++)
-						for(l = 0; l < 5; l++)
-							image_buf[k][l] = img[getIndex((i-2)+k,(j-2)+l,width)];
-
-					img[((i * width) + j)] = gausian(image_buf);
-				}else{
-					img[((i * width) + j)] = img[((i * width) + j)];
-				}
-			}
-		}
-	}
-}
-
-void do_sobel(uint8_t *img, int32_t width, int32_t height){
-	int32_t i, j, k, l;
-	uint8_t image_buf[3][3];
-	
-	for(i = 0; i < height; i++){
-		if (i > 1 && i < height-2){
-			for(j = 0; j < width; j++){
-				if (j > 1 && j < width-2){
-					for (k = 0; k < 3;k++)
-						for(l = 0; l < 3; l++)
-							image_buf[k][l] = img[getIndex((i-1)+k,(j-1)+l,width)];
-
-					img[((i * width) + j)] = sobel(image_buf);
-				}else{
-					img[((i * width) + j)] = img[((i * width) + j)];
-				}
-			}
-		}
-	}
-}
-
 
 int get_free_cpu(int8_t *work_map){
 	uint8_t i=0;
@@ -135,7 +34,7 @@ void init_work_map(int8_t *work_map){
 	}
 }
 
-int getIndex(int row, int col, int w){
+int32_t getIndex(int32_t row, int32_t col, int32_t w){
 	return row*w+col;
 }
 
@@ -148,7 +47,6 @@ void get_image_part(uint8_t p, uint8_t *buf, int32_t wp, int32_t hp, int32_t bw,
 	int32_t l = sl, bl = 2;
 	int32_t c = sc, bc = 2;
 
-	//printf("Part:%d, sc:%d, sl:%d, ec:%d, el:%d \n", p, sc, sl, ec, el);
 	for(l = sl,bl = 2; l < el; l++, bl++){
 		for(c = sc, bc = 2; c < ec; c++, bc++){
 			
@@ -378,7 +276,7 @@ void print_matrix(uint8_t *matrix, int32_t w, int32_t h){
 	for(l = 0; l < h; l++){
 		for(c = 0; c < w; c++){
 			i = getIndex(l, c , w);
-			printf("%d\t", matrix[i]);
+			printf("0x%x\t", matrix[i]);
 		}
 		printf("\n");
 	}
@@ -407,10 +305,14 @@ void master(){
 	int16_t val;
 	uint8_t loop = 1;
 	int8_t buf[(BW+BORDER)*(BH+BORDER)], work_map[N_CPU];
-	int32_t dest_port = 5000;
+	int32_t dest_port = 5000, time;
+
+	
+	
 	if (hf_comm_create(hf_selfid(), 1111, 0))
 		panic(0xff);
 
+	time = _readcounter();
 	// init in how many parts the image will be split
 	wp = width / BW;
 	hp = height / BH;
@@ -421,7 +323,6 @@ void master(){
 	current_part = 1;
 	ready_parts = 0;
 	init_work_map(work_map);
-	//print_matrix(image, width, height );
 	img_result = (uint8_t *) malloc(height * width);
 
     while(loop)
@@ -434,34 +335,27 @@ void master(){
     		memset(buf, 0, (BW+BORDER)*(BH+BORDER) * sizeof(uint8_t));
     		get_image_part(current_part, buf, wp, hp, BW, BH);
     		dest_port = 5000 + next;
-    		//printf("Next:%d, dest_port:%d \n", next, dest_port);
     		val = hf_sendack(next, dest_port, buf, sizeof(buf), next+300, 600);  
 			if (val)
-				printf("hf_sendack(): error %d\n", val);    		
-    	//	printf("Enviou parte %d para o escravo %d, porta:%d, canal:%d\n", current_part, next, dest_port,next+300);
-    		//print_matrix(buf, BW+BORDER, BH+BORDER);
-    		//printf("######\n\n\n"); 
+				printf("hf_sendack(): error %d\n", val);    		 
     		work_map[next] = current_part;
     		current_part++;
 
     	}else{
-    		
+    		// RECEIVE WORK
     		int32_t channel = -1;
     		int8_t received_p = 0;
     		if(ready_parts < n_parts){
     			while(received_p < N_CPU-1 && ready_parts < n_parts){
 	    			channel = hf_recvprobe();
 					if (channel >= 0) {
-		    			//printf("Esperando matrix do escravo.\n");
+		    			
 		    			val = hf_recvack(&cpu, &task, buf, &size, channel);
 		    			if (val)
 							printf("hf_recvack(): error %d\n", val);
-		    			//printf("Recebeu matrix do escravo:%d canal:%d\n",cpu, channel);
-		    			//print_matrix(buf, BW+BORDER, BH+BORDER);
 		    			part_received = work_map[cpu];
 		    			realoc_part(img_result, part_received, buf, wp, hp, BW, BH);
 		    			work_map[cpu] = -1;
-		    			//printf("Partes:%d\n", ready_parts);
 		    			ready_parts++;
 		 				received_p++;		
 	    			}
@@ -472,6 +366,9 @@ void master(){
     		}
     	}
     }
+
+	time = _readcounter() - time;
+	printf("done in %d clock cycles.\n\n", time);
     print_final_result(img_result);
     free(img_result);
 }
@@ -487,35 +384,22 @@ void slave(){
 			panic(0xff);
 	}
 	printf("Inicializou escravo: %d na porta%d\n", hf_cpuid(), port);
-	
-	
-	//uint32_t time;
 
 	while (1){
 		channel = hf_recvprobe();
 		if(channel >= 0){
-			//printf("Escravo %d esperando trabalho. Porta: %d\n", hf_cpuid(), port);
-
 			//memset(recv_buf, 0, (BW+BORDER)*(BH+BORDER)*sizeof(uint8_t));
 			val = hf_recvack(&src_cpu, &src_port, recv_buf, &size, channel);
 			if (val)
 				printf("hf_recvack(): error %d\n", val);
-			//printf("Escravo %d recebeu trabalho no canal %d.\n", hf_cpuid(), channel);
-			//time = _readcounter();
 
 			do_gausian(recv_buf, BW + BORDER, BH + BORDER);
 			do_sobel(recv_buf, BW+BORDER, BH+BORDER);
 			delay_ms(50);
 			
-			//print_matrix(recv_buf, BW+BORDER, BH+BORDER);
-			//printf("Escravo %d  vai enviar trabalho feito, para porta %d no canal %d.\n", hf_cpuid(), 1111, hf_cpuid()+100);
 			val = hf_sendack(0, 1111, recv_buf, sizeof(recv_buf), hf_cpuid()+100, 100);
 			if (val)
 				printf("hf_sendack(): error %d\n", val);
-			//printf("Escravo %d  enviou trabalho feito.\n", hf_cpuid());
-			//time = _readcounter() - time;
-
-			//printf("done in %d clock cycles.\n\n", time);
 		}
 	}	
 }
